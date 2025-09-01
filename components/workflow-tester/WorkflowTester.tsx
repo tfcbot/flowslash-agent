@@ -38,7 +38,7 @@ export default function WorkflowTester({
       const outputNodes = nodes.filter((node) => node.type === "customOutput");
 
       log.push(
-        `Found ${inputNodes.length} input nodes, ${llmNodes.length} LLM nodes, ${composioNodes.length} Composio nodes, ${outputNodes.length} output nodes`,
+        `Found ${inputNodes.length} input nodes, ${llmNodes.length} LLM nodes, ${composioNodes.length} tool nodes, ${outputNodes.length} output nodes`,
       );
       setExecutionLog([...log]);
 
@@ -52,7 +52,7 @@ export default function WorkflowTester({
       setExecutionLog([...log]);
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      log.push("Running Composio tool actions...");
+      log.push("Running tool actions...");
       setExecutionLog([...log]);
 
       await new Promise((resolve) => setTimeout(resolve, 1000));

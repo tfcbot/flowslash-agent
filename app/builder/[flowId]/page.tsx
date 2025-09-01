@@ -129,7 +129,7 @@ export default function BuilderPage() {
       type: "composio",
       label: "Composio Tool",
       icon: <Puzzle size={18} />,
-      defaultData: { label: "Composio Action", toolAction: "" },
+      defaultData: { label: "Tool", toolAction: "" },
     },
     {
       type: "customOutput",
