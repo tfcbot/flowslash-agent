@@ -2,11 +2,7 @@ import React, { useState } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Puzzle,
-  Settings,
-  ExternalLink,
-} from "lucide-react";
+import { Puzzle, Settings, ExternalLink } from "lucide-react";
 
 export interface ComposioNodeData {
   label: string;
@@ -24,7 +20,6 @@ export default function ComposioNode({
   onOpenToolsWindow,
 }: ComposioNodeProps) {
   const [isEditing, setIsEditing] = useState(false);
-
 
   const handleLabelChange = (newLabel: string) => {
     data.onNodeDataChange(id, { label: newLabel });
@@ -85,8 +80,6 @@ export default function ComposioNode({
             className="h-8 text-xs"
           />
         </div>
-
-
 
         <div className="flex justify-between items-center">
           <div className="text-xs text-gray-400">

@@ -40,10 +40,7 @@ const mockTools = [
   },
 ];
 
-export default function ToolsWindow({
-  isOpen,
-  onClose,
-}: ToolsWindowProps) {
+export default function ToolsWindow({ isOpen, onClose }: ToolsWindowProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
@@ -64,8 +61,6 @@ export default function ToolsWindow({
     return matchesSearch && matchesCategory;
   });
 
-
-
   if (!isOpen) return null;
 
   return (
@@ -85,8 +80,6 @@ export default function ToolsWindow({
             <X size={16} />
           </Button>
         </div>
-
-
 
         {/* Search and Filters */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">

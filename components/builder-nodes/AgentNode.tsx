@@ -59,13 +59,9 @@ export default function AgentNode({
     data.onNodeDataChange(id, { systemPrompt: newPrompt });
   };
 
-
-
   const handleAllowedToolsChange = (newTools: string) => {
     data.onNodeDataChange(id, { allowedTools: newTools });
   };
-
-
 
   const openToolsWindow = () => {
     onOpenToolsWindow();
@@ -153,8 +149,6 @@ export default function AgentNode({
             className="h-8 text-xs"
           />
         </div>
-
-
 
         <div>
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
