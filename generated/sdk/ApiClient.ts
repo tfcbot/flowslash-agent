@@ -307,37 +307,38 @@ export class HttpClient<SecurityDataType = unknown> {
 export class Api<
   SecurityDataType extends unknown,
 > extends HttpClient<SecurityDataType> {
-  /**
-   * @description Get API status and available endpoints
-   *
-   * @name GetRoot
-   * @summary API Health Check
-   * @request GET:/
-   * @secure
-   */
-  getRoot = (params: RequestParams = {}) =>
-    this.request<
-      {
-        /** @example true */
-        success?: boolean;
-        data?: {
-          name?: string;
-          version?: string;
-          status?: string;
-          endpoints?: object;
-        };
-        /** @format date-time */
-        timestamp?: string;
-      },
-      any
-    >({
-      path: `/`,
-      method: "GET",
-      secure: true,
-      format: "json",
-      ...params,
-    });
-
+  health = {
+    /**
+     * @description Get API status and available endpoints
+     *
+     * @name HealthList
+     * @summary API Health Check
+     * @request GET:/health
+     * @secure
+     */
+    healthList: (params: RequestParams = {}) =>
+      this.request<
+        {
+          /** @example true */
+          success?: boolean;
+          data?: {
+            name?: string;
+            version?: string;
+            status?: string;
+            endpoints?: object;
+          };
+          /** @format date-time */
+          timestamp?: string;
+        },
+        any
+      >({
+        path: `/health`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+  };
   execute = {
     /**
      * @description Execute the embedded LangGraph workflow with user input. UserId extracted from bearer token or optionally provided in request body.

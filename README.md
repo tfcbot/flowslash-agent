@@ -177,9 +177,9 @@ curl -X POST http://localhost:3000/execute \
 
 ## 📡 **API Endpoints**
 
+- **`GET /`** - Interactive API documentation (Swagger UI)
 - **`POST /execute`** - Execute the embedded workflow (requires bearer token)
-- **`GET /`** - API health check
-- **`GET /docs`** - Interactive API documentation  
+- **`GET /health`** - API health check and status
 - **`GET /api/sdk/download`** - Download TypeScript SDK
 - **`GET /llms.txt`** - AI-friendly endpoint documentation
 

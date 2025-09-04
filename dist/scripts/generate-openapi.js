@@ -71,7 +71,7 @@ const openApiSpec = {
         },
     ],
     paths: {
-        '/': {
+        '/health': {
             get: {
                 summary: 'API Health Check',
                 description: 'Get API status and available endpoints',
@@ -321,7 +321,7 @@ const generateOpenApiSpec = () => {
         console.log('');
         // Endpoint analysis
         const publicEndpoints = [
-            '/',
+            '/health',
             '/api/sdk/download',
             '/api/sdk/info',
             '/llms.txt',
@@ -331,6 +331,7 @@ const generateOpenApiSpec = () => {
         console.log(`📊 Endpoint Analysis:`);
         console.log(`   🌍 Public endpoints: ${publicEndpoints.length}`);
         console.log(`   🤖 Workflow endpoints: ${workflowEndpoints.length}`);
+        console.log(`   📖 Documentation: / (root)`);
         console.log(`   📈 Total endpoints: ${totalEndpoints}`);
     }
     catch (error) {

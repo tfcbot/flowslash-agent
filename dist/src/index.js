@@ -94,25 +94,30 @@ app.use('*', (0, cors_1.cors)({
     credentials: true,
 }));
 app.use('*', (0, logger_1.logger)());
+// Root endpoint - API Documentation
+app.get('/', (0, swagger_ui_1.swaggerUI)({
+    url: '/api/openapi.json',
+}));
+// Also serve docs at /docs/* for compatibility
+app.get('/docs/*', (0, swagger_ui_1.swaggerUI)({
+    url: '/api/openapi.json',
+}));
 // Health check endpoint
-app.get('/', c => {
+app.get('/health', c => {
     const healthData = {
         name: 'FlowSlash Agent Microservice',
         version: '1.0.0',
         status: 'healthy',
         endpoints: {
+            documentation: '/',
             execute: '/execute',
-            documentation: '/docs',
+            health: '/health',
             sdk: '/api/sdk',
             llms: '/llms.txt',
         },
     };
     return c.json((0, simple_1.createSuccessResponse)(healthData));
 });
-// API Documentation
-app.get('/docs/*', (0, swagger_ui_1.swaggerUI)({
-    url: '/api/openapi.json',
-}));
 app.get('/api/openapi.json', c => {
     return c.json(openapi_spec_1.openApiSpec);
 });
@@ -147,15 +152,16 @@ app.notFound(c => {
     return c.json({
         error: 'Not Found',
         message: 'The requested endpoint does not exist',
-        availableEndpoints: ['/execute', '/docs', '/api/sdk', '/llms.txt'],
+        availableEndpoints: ['/', '/execute', '/health', '/api/sdk', '/llms.txt'],
         timestamp: new Date().toISOString(),
     }, 404);
 });
 // Start server
 const port = parseInt(process.env.PORT || '3000');
 console.log('🚀 Starting FlowSlash Agent Microservice...');
+console.log(`📖 API Documentation: http://localhost:${port}/`);
 console.log(`⚡ Execute Endpoint: http://localhost:${port}/execute`);
-console.log(`📖 API Documentation: http://localhost:${port}/docs`);
+console.log(`💚 Health Check: http://localhost:${port}/health`);
 console.log(`📋 SDK Download: http://localhost:${port}/api/sdk/download`);
 console.log(`📄 LLMs.txt: http://localhost:${port}/llms.txt`);
 console.log(`🌐 CORS: Configured for localhost, *.freestyle.sh, and *.flowslash.com domains`);

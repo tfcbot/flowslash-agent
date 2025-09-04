@@ -28,7 +28,7 @@
     }
   ],
   "paths": {
-    "/": {
+    "/health": {
       "get": {
         "summary": "API Health Check",
         "description": "Get API status and available endpoints",

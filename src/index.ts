@@ -43,26 +43,32 @@ app.use('*', cors({
   origin: (origin) => {
     console.log(`🌐 CORS request from origin: ${origin || 'no-origin'}`);
     
-    // Allow localhost for development
-    if (!origin || origin.includes('localhost')) {
+    // Allow no origin (same-origin requests)
+    if (!origin) {
+      console.log('✅ CORS: Allowing same-origin request');
+      return '*';
+    }
+    
+    // Allow all localhost variations (localhost, 127.0.0.1, any port)
+    if (origin.includes('localhost') || origin.includes('127.0.0.1') || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
       console.log('✅ CORS: Allowing localhost');
-      return origin || '*';
+      return origin;
     }
     
     // Allow all freestyle.sh subdomains (HTTP and HTTPS)
-    if (origin && origin.endsWith('.freestyle.sh')) {
+    if (origin.endsWith('.freestyle.sh')) {
       console.log('✅ CORS: Allowing freestyle.sh domain');
       return origin;
     }
     
     // Allow all flowslash.com subdomains (HTTP and HTTPS)
-    if (origin && origin.endsWith('.flowslash.com')) {
+    if (origin.endsWith('.flowslash.com')) {
       console.log('✅ CORS: Allowing flowslash.com domain');
       return origin;
     }
     
     // Allow any freestyle.sh or flowslash.com domain patterns
-    if (origin && (/^https?:\/\/.*\.freestyle\.sh$/.test(origin) || /^https?:\/\/.*\.flowslash\.com$/.test(origin))) {
+    if (/^https?:\/\/.*\.freestyle\.sh$/.test(origin) || /^https?:\/\/.*\.flowslash\.com$/.test(origin)) {
       console.log('✅ CORS: Allowing domain pattern match');
       return origin;
     }
@@ -74,29 +80,32 @@ app.use('*', cors({
 }));
 app.use('*', logger());
 
+// Root endpoint - API Documentation
+app.get('/', swaggerUI({
+  url: '/api/openapi.json',
+}));
+
+// Also serve docs at /docs/* for compatibility
+app.get('/docs/*', swaggerUI({
+  url: '/api/openapi.json',
+}));
+
 // Health check endpoint
-app.get('/', c => {
+app.get('/health', c => {
   const healthData = {
     name: 'FlowSlash Agent Microservice',
     version: '1.0.0',
     status: 'healthy' as const,
     endpoints: {
+      documentation: '/',
       execute: '/execute',
-      documentation: '/docs',
+      health: '/health',
       sdk: '/api/sdk',
       llms: '/llms.txt',
     },
   };
   return c.json(createSuccessResponse(healthData));
 });
-
-// API Documentation
-app.get(
-  '/docs/*',
-  swaggerUI({
-    url: '/api/openapi.json',
-  })
-);
 
 app.get('/api/openapi.json', c => {
   return c.json(openApiSpec);
@@ -142,7 +151,7 @@ app.notFound(c => {
     {
       error: 'Not Found',
       message: 'The requested endpoint does not exist',
-      availableEndpoints: ['/execute', '/docs', '/api/sdk', '/llms.txt'],
+      availableEndpoints: ['/', '/execute', '/health', '/api/sdk', '/llms.txt'],
       timestamp: new Date().toISOString(),
     },
     404
@@ -153,8 +162,9 @@ app.notFound(c => {
 const port = parseInt(process.env.PORT || '3000');
 
 console.log('🚀 Starting FlowSlash Agent Microservice...');
+console.log(`📖 API Documentation: http://localhost:${port}/`);
 console.log(`⚡ Execute Endpoint: http://localhost:${port}/execute`);
-console.log(`📖 API Documentation: http://localhost:${port}/docs`);
+console.log(`💚 Health Check: http://localhost:${port}/health`);
 console.log(`📋 SDK Download: http://localhost:${port}/api/sdk/download`);
 console.log(`📄 LLMs.txt: http://localhost:${port}/llms.txt`);
 console.log(`🌐 CORS: Configured for localhost, *.freestyle.sh, and *.flowslash.com domains`);
