@@ -12,6 +12,8 @@
   "dependencies": {
     "@composio/core": "^0.1.8-alpha.0",
     "@composio/langchain": "^0.1.8-alpha.0",
+    "@instantdb/admin": "^0.21.11",
+    "@instantdb/react": "^0.21.11",
     "@langchain/anthropic": "^0.3.20",
     "@langchain/community": "^0.3.42",
     "@langchain/core": "^0.3.55",
@@ -34,7 +36,8 @@
     "react-joyride": "^3.0.0-7",
     "react-markdown": "^10.1.0",
     "reactflow": "^11.11.4",
-    "tailwind-merge": "^3.2.0"
+    "tailwind-merge": "^3.2.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",

@@ -1,0 +1,16 @@
+{
+  "name": "workflow-agent-examples",
+  "version": "1.0.0",
+  "description": "Example AI agents for workflow optimization and collaboration",
+  "scripts": {
+    "optimization-agent": "npx tsx optimization-agent.ts",
+    "demo": "npx tsx optimization-agent.ts demo-workflow-123"
+  },
+  "dependencies": {
+    "@instantdb/admin": "latest",
+    "tsx": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}
