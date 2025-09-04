@@ -1,30 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { BrainCircuit, Settings } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
+import { NodeDropdown } from "@/components/ui/node-dropdown";
 
 export interface LLMNodeData {
   label: string;
   systemPrompt: string;
   onNodeDataChange: (id: string, data: Partial<LLMNodeData>) => void;
+  onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
 }
 
 interface LLMNodeProps extends NodeProps<LLMNodeData> {}
 
-export default function LLMNode({ id, data }: LLMNodeProps) {
+const LLMNode = memo(function LLMNode({ id, data, selected }: LLMNodeProps) {
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleLabelChange = (newLabel: string) => {
+  const handleLabelChange = useCallback((newLabel: string) => {
     data.onNodeDataChange(id, { label: newLabel });
-  };
+  }, [id, data.onNodeDataChange]);
 
-  const handleSystemPromptChange = (newPrompt: string) => {
+  const handleSystemPromptChange = useCallback((newPrompt: string) => {
     data.onNodeDataChange(id, { systemPrompt: newPrompt });
-  };
+  }, [id, data.onNodeDataChange]);
+
+  const handleDelete = useCallback(() => {
+    if (data.onDelete) {
+      data.onDelete(id);
+    }
+  }, [id, data.onDelete]);
+
+  const handleDuplicate = useCallback(() => {
+    if (data.onDuplicate) {
+      data.onDuplicate(id);
+    }
+  }, [id, data.onDuplicate]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-2 border-purple-500 rounded-lg p-4 shadow-lg min-w-[250px]">
+    <div className={`bg-white dark:bg-gray-800 border-2 rounded-lg p-4 shadow-lg min-w-[250px] transition-all duration-200 relative ${
+      selected ? 'border-purple-400 shadow-purple-400/20 shadow-xl' : 'border-purple-500'
+    }`}>
       <Handle type="target" position={Position.Left} className="w-3 h-3" />
 
       <div className="flex items-center gap-2 mb-3">
@@ -48,14 +65,11 @@ export default function LLMNode({ id, data }: LLMNodeProps) {
             </div>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsEditing(!isEditing)}
-          className="h-6 w-6 p-0"
-        >
-          <Settings size={12} />
-        </Button>
+        <NodeDropdown
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
+          onSettings={() => setIsEditing(!isEditing)}
+        />
       </div>
 
       <div className="space-y-3">
@@ -64,10 +78,12 @@ export default function LLMNode({ id, data }: LLMNodeProps) {
             System Prompt:
           </div>
           <Input
-            value={data.systemPrompt}
+            value={data.systemPrompt || ''}
             onChange={(e) => handleSystemPromptChange(e.target.value)}
             placeholder="Enter system prompt..."
             className="h-8 text-xs"
+            onFocus={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           />
         </div>
 
@@ -83,4 +99,6 @@ export default function LLMNode({ id, data }: LLMNodeProps) {
       <Handle type="source" position={Position.Right} className="w-3 h-3" />
     </div>
   );
-}
+});
+
+export default LLMNode;

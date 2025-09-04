@@ -1,22 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRightCircle, Settings, Download } from "lucide-react";
+import { ArrowRightCircle, Download } from "lucide-react";
+import { NodeDropdown } from "@/components/ui/node-dropdown";
 
 export interface OutputNodeData {
   label: string;
+  onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
 }
 
-export default function OutputNode({ id, data }: NodeProps<OutputNodeData>) {
+const OutputNode = memo(function OutputNode({ id, data, selected }: NodeProps<OutputNodeData>) {
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleLabelChange = (newLabel: string) => {
+  const handleLabelChange = useCallback((newLabel: string) => {
     // This would need to be passed through props if we want to make it editable
     console.log("Label changed to:", newLabel);
-  };
+  }, []);
 
-  const downloadOutput = () => {
+  const downloadOutput = useCallback(() => {
     // This would download the actual output data
     const dataStr =
       "data:text/json;charset=utf-8," +
@@ -27,10 +30,24 @@ export default function OutputNode({ id, data }: NodeProps<OutputNodeData>) {
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
-  };
+  }, []);
+
+  const handleDelete = useCallback(() => {
+    if (data.onDelete) {
+      data.onDelete(id);
+    }
+  }, [id, data.onDelete]);
+
+  const handleDuplicate = useCallback(() => {
+    if (data.onDuplicate) {
+      data.onDuplicate(id);
+    }
+  }, [id, data.onDuplicate]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-2 border-green-500 rounded-lg p-4 shadow-lg min-w-[200px]">
+    <div className={`bg-white dark:bg-gray-800 border-2 rounded-lg p-4 shadow-lg min-w-[200px] transition-all duration-200 relative ${
+      selected ? 'border-green-400 shadow-green-400/20 shadow-xl' : 'border-green-500'
+    }`}>
       <Handle type="target" position={Position.Left} className="w-3 h-3" />
 
       <div className="flex items-center gap-2 mb-3">
@@ -54,14 +71,11 @@ export default function OutputNode({ id, data }: NodeProps<OutputNodeData>) {
             </div>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsEditing(!isEditing)}
-          className="h-6 w-6 p-0"
-        >
-          <Settings size={12} />
-        </Button>
+        <NodeDropdown
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
+          onSettings={() => setIsEditing(!isEditing)}
+        />
       </div>
 
       <div className="space-y-2">
@@ -87,4 +101,6 @@ export default function OutputNode({ id, data }: NodeProps<OutputNodeData>) {
       <Handle type="source" position={Position.Bottom} className="w-3 h-3" />
     </div>
   );
-}
+});
+
+export default OutputNode;
