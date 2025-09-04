@@ -11,16 +11,16 @@ export function sdkRoutes() {
   const router = new Hono();
 
   // Download SDK
-  router.get('/download', async (c) => {
+  router.get('/download', async c => {
     try {
       const sdkPath = path.join(process.cwd(), 'generated/sdk');
-      
+
       if (!fs.existsSync(sdkPath)) {
         return c.json(
           createErrorResponse(
             'SDK not generated',
             'Run "npm run generate:sdk" to generate the TypeScript SDK first'
-          ), 
+          ),
           404
         );
       }
@@ -39,7 +39,6 @@ export function sdkRoutes() {
         'Content-Disposition': `attachment; filename="${archiveName}"`,
         'Content-Length': buffer.length.toString(),
       });
-
     } catch (error) {
       console.error('SDK download error:', error);
       return c.json(createErrorResponse('Failed to download SDK'), 500);
@@ -47,10 +46,10 @@ export function sdkRoutes() {
   });
 
   // Get SDK info
-  router.get('/info', async (c) => {
+  router.get('/info', async c => {
     try {
       const sdkPath = path.join(process.cwd(), 'generated/sdk');
-      
+
       if (!fs.existsSync(sdkPath)) {
         return c.json(createErrorResponse('SDK not generated'), 404);
       }
@@ -61,7 +60,7 @@ export function sdkRoutes() {
         for (const item of items) {
           const fullPath = path.join(dir, item);
           const relativePath = path.join(basePath, item);
-          
+
           if (fs.statSync(fullPath).isDirectory()) {
             getFiles(fullPath, relativePath);
           } else {
@@ -69,7 +68,7 @@ export function sdkRoutes() {
           }
         }
       };
-      
+
       getFiles(sdkPath);
 
       // Get generation timestamp
@@ -93,12 +92,11 @@ export function sdkRoutes() {
             import: "import { ApiClient } from 'flowslash-agent-sdk';",
             initialization: `const client = new ApiClient({ BASE: 'http://localhost:3000' });`,
             example: `const result = await client.execute({ input: { message: 'Hello World' } }, { headers: { Authorization: 'Bearer your_token' } });`,
-          }
-        }
+          },
+        },
       };
 
       return c.json(createSuccessResponse(responseData));
-
     } catch (error) {
       console.error('SDK info error:', error);
       return c.json(createErrorResponse('Failed to get SDK info'), 500);
@@ -106,18 +104,17 @@ export function sdkRoutes() {
   });
 
   // Regenerate SDK
-  router.post('/regenerate', async (c) => {
+  router.post('/regenerate', async c => {
     try {
       await execAsync('npm run generate:openapi');
       await execAsync('npm run generate:sdk');
-      
+
       const responseData = {
         message: 'SDK regenerated successfully',
         timestamp: new Date().toISOString(),
       };
 
       return c.json(createSuccessResponse(responseData));
-
     } catch (error) {
       console.error('SDK regeneration error:', error);
       return c.json(createErrorResponse('Failed to regenerate SDK'), 500);
@@ -125,7 +122,7 @@ export function sdkRoutes() {
   });
 
   // Get examples
-  router.get('/examples', async (c) => {
+  router.get('/examples', async c => {
     const responseData = {
       examples: {
         basic: {
@@ -146,9 +143,9 @@ const result = await client.execute({
   }
 });
 
-console.log('Workflow Result:', result);`.trim()
-        }
-      }
+console.log('Workflow Result:', result);`.trim(),
+        },
+      },
     };
 
     return c.json(createSuccessResponse(responseData));

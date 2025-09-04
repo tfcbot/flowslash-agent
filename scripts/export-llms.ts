@@ -24,14 +24,14 @@ interface OpenAPIPath {
       readonly content?: {
         readonly 'application/json'?: {
           readonly schema?: {
-            readonly properties?: Record<string, any>;
+            readonly properties?: Record<string, Record<string, unknown>>;
             readonly required?: readonly string[];
-            readonly example?: any;
+            readonly example?: Record<string, unknown>;
           };
         };
       };
     };
-    readonly responses?: Record<string, any>;
+    readonly responses?: Record<string, Record<string, unknown>>;
     readonly tags?: readonly string[];
   };
 }
@@ -45,17 +45,21 @@ const exportLlmsFile = (): void => {
   try {
     // Read OpenAPI specification
     const openApiPath = path.join(process.cwd(), 'openapi.json');
-    
+
     if (!fs.existsSync(openApiPath)) {
-      console.error('❌ OpenAPI specification not found. Run "npm run generate:openapi" first.');
+      console.error(
+        '❌ OpenAPI specification not found. Run "npm run generate:openapi" first.'
+      );
       process.exit(1);
     }
 
-    const openApiSpec: OpenAPISpec = JSON.parse(fs.readFileSync(openApiPath, 'utf-8'));
-    
+    const openApiSpec: OpenAPISpec = JSON.parse(
+      fs.readFileSync(openApiPath, 'utf-8')
+    );
+
     const baseUrl = `http://localhost:${process.env.PORT || 3000}`;
     const generatedDate = new Date().toISOString();
-    
+
     let llmsContent = `# FlowSlash Agent API Endpoints
 # Generated: ${generatedDate}
 # Base URL: ${baseUrl}
@@ -97,7 +101,12 @@ Add header: Authorization: Bearer user_abc123_1234567890_demo
 `;
 
     // Categorize endpoints (removed token generation and connections - both external)
-    const publicEndpoints = ['/', '/api/sdk/download', '/api/sdk/info', '/llms.txt'];
+    const publicEndpoints = [
+      '/',
+      '/api/sdk/download',
+      '/api/sdk/info',
+      '/llms.txt',
+    ];
     let publicCount = 0;
     let userSpecificCount = 0;
 
@@ -106,7 +115,7 @@ Add header: Authorization: Bearer user_abc123_1234567890_demo
       Object.entries(methods).forEach(([method, details]) => {
         const httpMethod = method.toUpperCase();
         const isPublic = publicEndpoints.includes(endpointPath);
-        
+
         if (isPublic) {
           publicCount++;
         } else {
@@ -118,7 +127,7 @@ Add header: Authorization: Bearer user_abc123_1234567890_demo
 
         llmsContent += `### ${httpMethod} ${endpointPath}\n`;
         llmsContent += `${details.summary || 'No description'}\n`;
-        
+
         if (details.description) {
           llmsContent += `${details.description}\n`;
         }
@@ -126,12 +135,18 @@ Add header: Authorization: Bearer user_abc123_1234567890_demo
         // Highlight userId requirement
         if (endpointPath.includes('{userId}')) {
           llmsContent += `🔒 Requires userId in path parameter\n`;
-        } else if (details.requestBody?.content?.['application/json']?.schema?.required?.includes('userId')) {
+        } else if (
+          details.requestBody?.content?.[
+            'application/json'
+          ]?.schema?.required?.includes('userId')
+        ) {
           llmsContent += `🔒 Requires userId in request body\n`;
-        } else if (details.parameters?.some(p => p.name === 'userId' && p.required)) {
+        } else if (
+          details.parameters?.some(p => p.name === 'userId' && p.required)
+        ) {
           llmsContent += `🔒 Requires userId as query parameter\n`;
         }
-        
+
         // Add parameters info
         if (details.parameters && details.parameters.length > 0) {
           llmsContent += `Parameters:\n`;
@@ -142,18 +157,21 @@ Add header: Authorization: Bearer user_abc123_1234567890_demo
             llmsContent += `${prefix}${param.name}${required}: ${param.schema?.type || 'string'}\n`;
           });
         }
-        
+
         // Add request body info
         if (details.requestBody?.content?.['application/json']?.schema) {
           const schema = details.requestBody.content['application/json'].schema;
           llmsContent += `Request Body: JSON\n`;
-          
+
           if (schema.properties) {
             Object.entries(schema.properties).forEach(([prop, propSchema]) => {
-              const required = schema.required?.includes(prop) ? ' (required)' : ' (optional)';
+              const required = schema.required?.includes(prop)
+                ? ' (required)'
+                : ' (optional)';
               const isUserIdProp = prop === 'userId';
               const prefix = isUserIdProp ? '🔑 ' : '  - ';
-              llmsContent += `${prefix}${prop}${required}: ${(propSchema as any).type || 'any'}\n`;
+              const schemaType = (propSchema as { type?: string }).type || 'unknown';
+              llmsContent += `${prefix}${prop}${required}: ${schemaType}\n`;
             });
           }
 
@@ -162,13 +180,13 @@ Add header: Authorization: Bearer user_abc123_1234567890_demo
             llmsContent += `Example: ${JSON.stringify(schema.example, null, 2)}\n`;
           }
         }
-        
+
         // Add response codes
         if (details.responses) {
           const codes = Object.keys(details.responses).join(', ');
           llmsContent += `Responses: ${codes}\n`;
         }
-        
+
         llmsContent += `\n`;
       });
     });
@@ -312,10 +330,13 @@ All endpoints return standardized TypeScript-typed error responses:
 
     console.log('✅ llms.txt exported successfully!');
     console.log(`📄 Generated: ${outputPath}`);
-    console.log(`📊 Total endpoints documented: ${Object.keys(openApiSpec.paths).length}`);
+    console.log(
+      `📊 Total endpoints documented: ${Object.keys(openApiSpec.paths).length}`
+    );
     console.log(`🔗 Access at: ${baseUrl}/llms.txt`);
-    console.log(`📈 Public vs User-specific ratio: ${publicCount}:${userSpecificCount}`);
-
+    console.log(
+      `📈 Public vs User-specific ratio: ${publicCount}:${userSpecificCount}`
+    );
   } catch (error) {
     console.error('❌ Failed to generate llms.txt:', error);
     process.exit(1);

@@ -49,7 +49,7 @@ exports.openApiSpec = (() => {
         return cachedSpec;
     }
     catch (error) {
-        console.warn('OpenAPI spec not found, returning minimal spec. Run "bun run generate:openapi" to generate it.');
+        console.warn('OpenAPI spec not found, returning minimal spec. Run "npm run generate:openapi" to generate it.', error);
         // Return minimal spec if file doesn't exist
         return {
             openapi: '3.0.0',

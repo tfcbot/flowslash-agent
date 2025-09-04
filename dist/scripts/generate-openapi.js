@@ -67,8 +67,8 @@ const openApiSpec = {
     ],
     security: [
         {
-            bearerAuth: []
-        }
+            bearerAuth: [],
+        },
     ],
     paths: {
         '/': {
@@ -120,13 +120,13 @@ const openApiSpec = {
                                         additionalProperties: true,
                                         description: 'Input data for the workflow',
                                         example: {
-                                            message: 'Send email to john@example.com about project completion'
-                                        }
+                                            message: 'Send email to john@example.com about project completion',
+                                        },
                                     },
                                     userId: {
                                         type: 'string',
                                         description: 'Optional user ID override - if not provided, extracted from bearer token',
-                                        example: 'user123'
+                                        example: 'user123',
                                     },
                                 },
                                 required: ['input'],
@@ -139,7 +139,9 @@ const openApiSpec = {
                         description: 'Workflow executed successfully',
                         content: {
                             'application/json': {
-                                schema: { $ref: '#/components/schemas/WorkflowExecutionResponse' },
+                                schema: {
+                                    $ref: '#/components/schemas/WorkflowExecutionResponse',
+                                },
                             },
                         },
                     },
@@ -199,7 +201,10 @@ const openApiSpec = {
                                                 sdk: {
                                                     type: 'object',
                                                     properties: {
-                                                        generatedAt: { type: 'string', format: 'date-time' },
+                                                        generatedAt: {
+                                                            type: 'string',
+                                                            format: 'date-time',
+                                                        },
                                                         files: { type: 'array', items: { type: 'string' } },
                                                         totalFiles: { type: 'number' },
                                                         installInstructions: { type: 'object' },
@@ -248,8 +253,8 @@ const openApiSpec = {
                 type: 'http',
                 scheme: 'bearer',
                 bearerFormat: 'token',
-                description: 'Bearer token authentication. UserId extracted from token, or optionally override in request body.'
-            }
+                description: 'Bearer token authentication. UserId extracted from token, or optionally override in request body.',
+            },
         },
         schemas: {
             WorkflowExecutionResponse: {
@@ -262,7 +267,7 @@ const openApiSpec = {
                             status: {
                                 type: 'string',
                                 enum: ['completed', 'failed'],
-                                description: 'Workflow execution status'
+                                description: 'Workflow execution status',
                             },
                             result: {
                                 type: 'object',
@@ -271,15 +276,18 @@ const openApiSpec = {
                                     currentOutput: { type: 'string' },
                                     nodeResults: {
                                         type: 'object',
-                                        additionalProperties: true
+                                        additionalProperties: true,
                                     },
                                     executionLog: {
                                         type: 'array',
-                                        items: { type: 'string' }
-                                    }
-                                }
+                                        items: { type: 'string' },
+                                    },
+                                },
                             },
-                            duration: { type: 'number', description: 'Execution time in milliseconds' },
+                            duration: {
+                                type: 'number',
+                                description: 'Execution time in milliseconds',
+                            },
                             message: { type: 'string' },
                         },
                     },
@@ -313,7 +321,10 @@ const generateOpenApiSpec = () => {
         console.log('');
         // Endpoint analysis
         const publicEndpoints = [
-            '/', '/api/sdk/download', '/api/sdk/info', '/llms.txt'
+            '/',
+            '/api/sdk/download',
+            '/api/sdk/info',
+            '/llms.txt',
         ];
         const workflowEndpoints = ['/execute'];
         const totalEndpoints = Object.keys(openApiSpec.paths).length;

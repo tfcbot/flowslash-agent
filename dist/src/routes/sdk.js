@@ -109,8 +109,8 @@ function sdkRoutes() {
                         import: "import { ApiClient } from 'flowslash-agent-sdk';",
                         initialization: `const client = new ApiClient({ BASE: 'http://localhost:3000' });`,
                         example: `const result = await client.execute({ input: { message: 'Hello World' } }, { headers: { Authorization: 'Bearer your_token' } });`,
-                    }
-                }
+                    },
+                },
             };
             return c.json((0, simple_1.createSuccessResponse)(responseData));
         }
@@ -157,9 +157,9 @@ const result = await client.execute({
   }
 });
 
-console.log('Workflow Result:', result);`.trim()
-                }
-            }
+console.log('Workflow Result:', result);`.trim(),
+                },
+            },
         };
         return c.json((0, simple_1.createSuccessResponse)(responseData));
     });

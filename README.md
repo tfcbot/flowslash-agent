@@ -348,11 +348,13 @@ wrangler publish
 ## 📊 **Development Commands**
 
 ```bash
-npm run dev     # Start development server
-npm run build   # Build for production  
-npm start       # Start production server
-npm run lint    # Check code quality
-npm run format  # Format code
+npm run dev         # Start development server
+npm run build       # Build for production  
+npm start           # Start production server
+npm run lint        # Check code quality with ESLint
+npm run lint:fix    # Fix ESLint issues automatically
+npm run format      # Format code with Prettier
+npm run format:check # Check code formatting
 ```
 
 ## 📁 **Project Structure for AI Agents**

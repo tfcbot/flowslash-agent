@@ -36,7 +36,10 @@ class WorkflowExecutor {
                     default: () => undefined,
                 },
                 nodeResults: {
-                    value: (x, y) => ({ ...x, ...y }),
+                    value: (x, y) => ({
+                        ...x,
+                        ...y,
+                    }),
                     default: () => ({}),
                 },
                 executionLog: {
@@ -48,7 +51,10 @@ class WorkflowExecutor {
                     default: () => undefined,
                 },
                 metadata: {
-                    value: (x, y) => ({ ...x, ...y }),
+                    value: (x, y) => ({
+                        ...x,
+                        ...y,
+                    }),
                     default: () => ({}),
                 },
             },
@@ -59,55 +65,61 @@ class WorkflowExecutor {
         // Add nodes to the graph
         for (const node of this.nodes) {
             switch (node.type) {
-                case "customInput":
+                case 'customInput':
                     this.graph.addNode(node.id, this.createInputNode(node));
                     break;
-                case "llm":
+                case 'llm':
                     this.graph.addNode(node.id, this.createLLMNode(node));
                     break;
-                case "composio":
+                case 'composio':
                     this.graph.addNode(node.id, this.createComposioNode(node));
                     break;
-                case "agent":
+                case 'agent':
                     this.graph.addNode(node.id, this.createAgentNode(node));
                     break;
-                case "customOutput":
+                case 'customOutput':
                     this.graph.addNode(node.id, this.createOutputNode(node));
                     break;
             }
         }
         // Add edges to define execution flow
         for (const edge of this.edges) {
+            // @ts-ignore: LangGraph expects specific node ID types
             this.graph.addEdge(edge.source, edge.target);
         }
         // Set entry point (first input node)
-        const inputNodes = this.nodes.filter(n => n.type === "customInput");
+        const inputNodes = this.nodes.filter(n => n.type === 'customInput');
         if (inputNodes.length > 0) {
+            // @ts-ignore: LangGraph expects specific node ID types
             this.graph.addEdge(langgraph_1.START, inputNodes[0].id);
         }
         // Set exit point (output nodes)
-        const outputNodes = this.nodes.filter(n => n.type === "customOutput");
+        const outputNodes = this.nodes.filter(n => n.type === 'customOutput');
         for (const outputNode of outputNodes) {
+            // @ts-ignore: LangGraph expects specific node ID types
             this.graph.addEdge(outputNode.id, langgraph_1.END);
         }
     }
     createInputNode(nodeConfig) {
         return async (state) => {
-            const log = [...state.executionLog, `Processing input node: ${nodeConfig.id}`];
+            const log = [
+                ...state.executionLog,
+                `Processing input node: ${nodeConfig.id}`,
+            ];
             return {
                 ...state,
-                currentInput: state.currentInput || nodeConfig.data.query || "",
+                currentInput: state.currentInput || nodeConfig.data.query || '',
                 messages: [
                     ...state.messages,
-                    new messages_1.HumanMessage(state.currentInput || nodeConfig.data.query || "")
+                    new messages_1.HumanMessage(state.currentInput || nodeConfig.data.query || ''),
                 ],
                 nodeResults: {
                     ...state.nodeResults,
                     [nodeConfig.id]: {
-                        type: "input",
+                        type: 'input',
                         result: state.currentInput || nodeConfig.data.query,
                         timestamp: new Date().toISOString(),
-                    }
+                    },
                 },
                 executionLog: log,
             };
@@ -115,28 +127,31 @@ class WorkflowExecutor {
     }
     createLLMNode(nodeConfig) {
         return async (state) => {
-            const log = [...state.executionLog, `Processing LLM node: ${nodeConfig.id}`];
+            const log = [
+                ...state.executionLog,
+                `Processing LLM node: ${nodeConfig.id}`,
+            ];
             try {
                 // Initialize the appropriate LLM based on configuration
                 let llm;
-                const modelProvider = nodeConfig.data.modelProvider || "openai";
+                const modelProvider = nodeConfig.data.modelProvider || 'openai';
                 const apiKey = process.env[`${modelProvider.toUpperCase()}_API_KEY`];
                 switch (modelProvider) {
-                    case "openai":
+                    case 'openai':
                         llm = new openai_1.ChatOpenAI({
-                            modelName: nodeConfig.data.modelName || "gpt-4o",
+                            modelName: nodeConfig.data.modelName || 'gpt-4o',
                             openAIApiKey: apiKey,
                         });
                         break;
-                    case "anthropic":
+                    case 'anthropic':
                         llm = new anthropic_1.ChatAnthropic({
-                            modelName: nodeConfig.data.modelName || "claude-3-5-sonnet-20240620",
+                            modelName: nodeConfig.data.modelName || 'claude-3-5-sonnet-20240620',
                             anthropicApiKey: apiKey,
                         });
                         break;
-                    case "google":
+                    case 'google':
                         llm = new google_genai_1.ChatGoogleGenerativeAI({
-                            model: nodeConfig.data.modelName || "gemini-1.5-pro-latest",
+                            model: nodeConfig.data.modelName || 'gemini-1.5-pro-latest',
                             apiKey: apiKey,
                         });
                         break;
@@ -159,20 +174,20 @@ class WorkflowExecutor {
                     nodeResults: {
                         ...state.nodeResults,
                         [nodeConfig.id]: {
-                            type: "llm",
+                            type: 'llm',
                             result: response.content,
                             model: nodeConfig.data.modelName,
                             provider: modelProvider,
                             timestamp: new Date().toISOString(),
-                        }
+                        },
                     },
                     executionLog: [...log, `LLM response generated successfully`],
                 };
             }
             catch (error) {
-                const workflowError = errorHandling_1.WorkflowErrorHandler.categorizeError(error, nodeConfig.id, "llm");
+                const workflowError = errorHandling_1.WorkflowErrorHandler.categorizeError(error, nodeConfig.id, 'llm');
                 const errorReport = errorHandling_1.WorkflowErrorHandler.createErrorReport(workflowError, {
-                    provider: nodeConfig.data.modelProvider || "openai",
+                    provider: nodeConfig.data.modelProvider || 'openai',
                     model: nodeConfig.data.modelName,
                 });
                 return {
@@ -181,10 +196,10 @@ class WorkflowExecutor {
                     nodeResults: {
                         ...state.nodeResults,
                         [nodeConfig.id]: {
-                            type: "llm",
+                            type: 'llm',
                             error: errorReport,
                             timestamp: new Date().toISOString(),
-                        }
+                        },
                     },
                     executionLog: [...log, `LLM node failed: ${workflowError.message}`],
                 };
@@ -193,11 +208,14 @@ class WorkflowExecutor {
     }
     createComposioNode(nodeConfig) {
         return async (state) => {
-            const log = [...state.executionLog, `Processing Composio node: ${nodeConfig.id}`];
+            const log = [
+                ...state.executionLog,
+                `Processing Composio node: ${nodeConfig.id}`,
+            ];
             try {
                 const composioApiKey = process.env.COMPOSIO_API_KEY;
                 if (!composioApiKey) {
-                    throw new Error("Composio API key not provided");
+                    throw new Error('Composio API key not provided');
                 }
                 // Initialize Composio client
                 const composio = new core_1.Composio({
@@ -206,13 +224,13 @@ class WorkflowExecutor {
                 const toolAction = nodeConfig.data.toolAction;
                 const toolInput = this.extractToolInput(state, nodeConfig);
                 if (!this.config.userId) {
-                    throw new Error("UserId is required but not provided. Users must be pre-authenticated.");
+                    throw new Error('UserId is required but not provided. Users must be pre-authenticated.');
                 }
                 const userId = this.config.userId;
                 let result;
                 try {
                     // Execute the Composio tool
-                    if (toolAction && toolAction !== "") {
+                    if (toolAction && toolAction !== '') {
                         const executionResult = await composio.tools.execute(toolAction, {
                             userId: userId,
                             arguments: toolInput,
@@ -232,8 +250,8 @@ class WorkflowExecutor {
                     }
                 }
                 catch (composioError) {
-                    const workflowError = errorHandling_1.WorkflowErrorHandler.categorizeError(composioError, nodeConfig.id, "composio");
-                    console.warn("Composio tool execution failed:", workflowError);
+                    const workflowError = errorHandling_1.WorkflowErrorHandler.categorizeError(composioError, nodeConfig.id, 'composio');
+                    console.warn('Composio tool execution failed:', workflowError);
                     result = {
                         success: false,
                         data: workflowError.message,
@@ -248,11 +266,11 @@ class WorkflowExecutor {
                     nodeResults: {
                         ...state.nodeResults,
                         [nodeConfig.id]: {
-                            type: "composio",
+                            type: 'composio',
                             result: result.data,
                             action: toolAction,
                             timestamp: new Date().toISOString(),
-                        }
+                        },
                     },
                     executionLog: [...log, `Composio tool executed successfully`],
                 };
@@ -269,7 +287,10 @@ class WorkflowExecutor {
     }
     createAgentNode(nodeConfig) {
         return async (state) => {
-            const log = [...state.executionLog, `Processing Agent node: ${nodeConfig.id}`];
+            const log = [
+                ...state.executionLog,
+                `Processing Agent node: ${nodeConfig.id}`,
+            ];
             try {
                 // This combines LLM + Tools in a single agent
                 const result = `Agent ${nodeConfig.id} processed: ${state.currentInput}`;
@@ -279,10 +300,10 @@ class WorkflowExecutor {
                     nodeResults: {
                         ...state.nodeResults,
                         [nodeConfig.id]: {
-                            type: "agent",
+                            type: 'agent',
                             result: result,
                             timestamp: new Date().toISOString(),
-                        }
+                        },
                     },
                     executionLog: [...log, `Agent executed successfully`],
                 };
@@ -299,16 +320,19 @@ class WorkflowExecutor {
     }
     createOutputNode(nodeConfig) {
         return async (state) => {
-            const log = [...state.executionLog, `Processing output node: ${nodeConfig.id}`];
+            const log = [
+                ...state.executionLog,
+                `Processing output node: ${nodeConfig.id}`,
+            ];
             return {
                 ...state,
                 nodeResults: {
                     ...state.nodeResults,
                     [nodeConfig.id]: {
-                        type: "output",
+                        type: 'output',
                         result: state.currentOutput,
                         timestamp: new Date().toISOString(),
-                    }
+                    },
                 },
                 executionLog: [...log, `Workflow completed successfully`],
             };
@@ -317,21 +341,24 @@ class WorkflowExecutor {
     extractToolInput(state, nodeConfig) {
         // Extract relevant input for the tool based on the current state and node configuration
         const baseInput = {
-            query: state.currentOutput || state.currentInput || "",
-            context: state.messages.slice(-3).map(msg => msg.content || msg).join("\n"),
+            query: state.currentOutput || state.currentInput || '',
+            context: state.messages
+                .slice(-3)
+                .map(msg => msg.content || msg)
+                .join('\n'),
         };
         // If the node has specific input mapping configuration, use it
         if (nodeConfig.data.inputMapping) {
             const mappedInput = {};
             for (const [key, sourcePath] of Object.entries(nodeConfig.data.inputMapping)) {
                 // Simple path extraction (e.g., "state.currentOutput", "nodeResults.llm_1.result")
-                if (typeof sourcePath === "string") {
-                    if (sourcePath.startsWith("state.")) {
-                        const path = sourcePath.replace("state.", "");
+                if (typeof sourcePath === 'string') {
+                    if (sourcePath.startsWith('state.')) {
+                        const path = sourcePath.replace('state.', '');
                         mappedInput[key] = this.getNestedValue(state, path);
                     }
-                    else if (sourcePath.startsWith("nodeResults.")) {
-                        const path = sourcePath.replace("nodeResults.", "");
+                    else if (sourcePath.startsWith('nodeResults.')) {
+                        const path = sourcePath.replace('nodeResults.', '');
                         mappedInput[key] = this.getNestedValue(state.nodeResults, path);
                     }
                     else {
@@ -345,7 +372,10 @@ class WorkflowExecutor {
     }
     getNestedValue(obj, path) {
         return path.split('.').reduce((current, key) => {
-            return current && current[key] !== undefined ? current[key] : undefined;
+            if (current && typeof current === 'object' && key in current) {
+                return current[key];
+            }
+            return undefined;
         }, obj);
     }
     async execute(initialInput) {
@@ -357,7 +387,7 @@ class WorkflowExecutor {
             currentInput: initialInput,
             currentOutput: undefined,
             nodeResults: {},
-            executionLog: ["Starting workflow execution"],
+            executionLog: ['Starting workflow execution'],
             error: undefined,
             metadata: {
                 startTime: new Date().toISOString(),
@@ -366,7 +396,10 @@ class WorkflowExecutor {
         };
         try {
             // Execute the graph
-            const finalState = await compiledGraph.invoke(initialState);
+            // @ts-ignore: LangGraph state type conversion
+            const finalState = (await compiledGraph.invoke(
+            // @ts-ignore: LangGraph state type conversion
+            initialState));
             return {
                 messages: finalState.messages || [],
                 currentInput: finalState.currentInput,
@@ -391,7 +424,10 @@ class WorkflowExecutor {
             return {
                 ...initialState,
                 error: errorReport.userMessage,
-                executionLog: [...initialState.executionLog, `Execution failed: ${workflowError.message}`],
+                executionLog: [
+                    ...initialState.executionLog,
+                    `Execution failed: ${workflowError.message}`,
+                ],
                 metadata: {
                     ...initialState.metadata,
                     errorReport,

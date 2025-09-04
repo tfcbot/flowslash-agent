@@ -16,7 +16,7 @@ const ExecuteRequestSchema = zod_1.z.object({
     input: zod_1.z.record(zod_1.z.unknown()),
     userId: zod_1.z.string().optional(), // Optional - extracted from bearer token if not provided
 });
-function executeRoutes(composio) {
+function executeRoutes() {
     const router = new hono_1.Hono();
     // Main execution endpoint - stateless microservice
     router.post('/execute', (0, auth_1.bearerAuth)(), (0, zod_validator_1.zValidator)('json', ExecuteRequestSchema), async (c) => {
@@ -53,7 +53,9 @@ function executeRoutes(composio) {
             const responseData = {
                 status: 'failed',
                 error: 'Workflow execution failed',
-                message: executionError instanceof Error ? executionError.message : String(executionError),
+                message: executionError instanceof Error
+                    ? executionError.message
+                    : String(executionError),
                 duration,
                 timestamp: new Date().toISOString(),
             };
@@ -71,45 +73,45 @@ function getWorkflowDefinition() {
     return {
         nodes: [
             {
-                id: "input_1",
-                type: "customInput",
+                id: 'input_1',
+                type: 'customInput',
                 data: {
-                    label: "User Input",
-                    query: ""
-                }
+                    label: 'User Input',
+                    query: '',
+                },
             },
             {
-                id: "llm_1",
-                type: "llm",
+                id: 'llm_1',
+                type: 'llm',
                 data: {
-                    provider: "openai",
-                    modelName: "gpt-4o",
+                    provider: 'openai',
+                    modelName: 'gpt-4o',
                     systemPrompt: "You are a helpful assistant. Respond to the user's input.",
                     temperature: 0.7,
-                    maxTokens: 500
-                }
+                    maxTokens: 500,
+                },
             },
             {
-                id: "output_1",
-                type: "customOutput",
+                id: 'output_1',
+                type: 'customOutput',
                 data: {
-                    format: "text",
-                    label: "Assistant Response"
-                }
-            }
+                    format: 'text',
+                    label: 'Assistant Response',
+                },
+            },
         ],
         edges: [
             {
-                id: "edge_1",
-                source: "input_1",
-                target: "llm_1"
+                id: 'edge_1',
+                source: 'input_1',
+                target: 'llm_1',
             },
             {
-                id: "edge_2",
-                source: "llm_1",
-                target: "output_1"
-            }
-        ]
+                id: 'edge_2',
+                source: 'llm_1',
+                target: 'output_1',
+            },
+        ],
     };
 }
 //# sourceMappingURL=execute.js.map

@@ -9,8 +9,7 @@ dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
 dotenv.config({ path: path.join(__dirname, '..', '.env.development') });
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-// Import types for type safety
-import type { Provider } from '../src/types/simple';
+// Import types for type safety (unused but kept for future type validation)
 
 // OpenAPI 3.0 Specification with proper TypeScript typing
 interface OpenAPISpec {
@@ -31,11 +30,11 @@ interface OpenAPISpec {
     readonly url: string;
     readonly description: string;
   }[];
-  readonly security?: readonly Record<string, any>[];
-  readonly paths: Record<string, any>;
+  readonly security?: readonly Record<string, string[]>[];
+  readonly paths: Record<string, Record<string, unknown>>;
   readonly components: {
-    readonly securitySchemes?: Record<string, any>;
-    readonly schemas: Record<string, any>;
+    readonly securitySchemes?: Record<string, Record<string, unknown>>;
+    readonly schemas: Record<string, Record<string, unknown>>;
   };
 }
 
@@ -44,7 +43,8 @@ const openApiSpec: OpenAPISpec = {
   info: {
     title: 'FlowSlash Agent API',
     version: '1.0.0',
-    description: 'Stateless LangGraph microservice for AI-generated workflow execution with 15 curated tool integrations. Uses environment variables for API keys and bearer token authentication.',
+    description:
+      'Stateless LangGraph microservice for AI-generated workflow execution with 15 curated tool integrations. Uses environment variables for API keys and bearer token authentication.',
     contact: {
       name: 'FlowSlash Agent API',
       url: 'http://localhost:3000/docs',
@@ -65,8 +65,8 @@ const openApiSpec: OpenAPISpec = {
   ],
   security: [
     {
-      bearerAuth: []
-    }
+      bearerAuth: [],
+    },
   ],
   paths: {
     '/': {
@@ -103,7 +103,8 @@ const openApiSpec: OpenAPISpec = {
     '/execute': {
       post: {
         summary: 'Execute AI-Generated Workflow',
-        description: 'Execute the embedded LangGraph workflow with user input. UserId extracted from bearer token or optionally provided in request body.',
+        description:
+          'Execute the embedded LangGraph workflow with user input. UserId extracted from bearer token or optionally provided in request body.',
         tags: ['Workflow Execution'],
         security: [{ bearerAuth: [] }],
         requestBody: {
@@ -113,18 +114,20 @@ const openApiSpec: OpenAPISpec = {
               schema: {
                 type: 'object',
                 properties: {
-                  input: { 
+                  input: {
                     type: 'object',
                     additionalProperties: true,
                     description: 'Input data for the workflow',
                     example: {
-                      message: 'Send email to john@example.com about project completion'
-                    }
+                      message:
+                        'Send email to john@example.com about project completion',
+                    },
                   },
-                  userId: { 
+                  userId: {
                     type: 'string',
-                    description: 'Optional user ID override - if not provided, extracted from bearer token',
-                    example: 'user123'
+                    description:
+                      'Optional user ID override - if not provided, extracted from bearer token',
+                    example: 'user123',
                   },
                 },
                 required: ['input'],
@@ -137,7 +140,9 @@ const openApiSpec: OpenAPISpec = {
             description: 'Workflow executed successfully',
             content: {
               'application/json': {
-                schema: { $ref: '#/components/schemas/WorkflowExecutionResponse' },
+                schema: {
+                  $ref: '#/components/schemas/WorkflowExecutionResponse',
+                },
               },
             },
           },
@@ -155,7 +160,8 @@ const openApiSpec: OpenAPISpec = {
     '/api/sdk/download': {
       get: {
         summary: 'Download TypeScript SDK',
-        description: 'Download generated TypeScript SDK as tar.gz archive - NO userId required',
+        description:
+          'Download generated TypeScript SDK as tar.gz archive - NO userId required',
         tags: ['SDK', 'Public'],
         responses: {
           '200': {
@@ -180,7 +186,8 @@ const openApiSpec: OpenAPISpec = {
     '/api/sdk/info': {
       get: {
         summary: 'Get SDK information',
-        description: 'Get metadata about the generated TypeScript SDK - NO userId required',
+        description:
+          'Get metadata about the generated TypeScript SDK - NO userId required',
         tags: ['SDK', 'Public'],
         responses: {
           '200': {
@@ -197,7 +204,10 @@ const openApiSpec: OpenAPISpec = {
                         sdk: {
                           type: 'object',
                           properties: {
-                            generatedAt: { type: 'string', format: 'date-time' },
+                            generatedAt: {
+                              type: 'string',
+                              format: 'date-time',
+                            },
                             files: { type: 'array', items: { type: 'string' } },
                             totalFiles: { type: 'number' },
                             installInstructions: { type: 'object' },
@@ -217,7 +227,8 @@ const openApiSpec: OpenAPISpec = {
     '/llms.txt': {
       get: {
         summary: 'Get LLMs.txt file',
-        description: 'Download endpoint list in LLMs.txt format for AI consumption - NO userId required',
+        description:
+          'Download endpoint list in LLMs.txt format for AI consumption - NO userId required',
         tags: ['Documentation', 'Public'],
         responses: {
           '200': {
@@ -246,8 +257,9 @@ const openApiSpec: OpenAPISpec = {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'token',
-        description: 'Bearer token authentication. UserId extracted from token, or optionally override in request body.'
-      }
+        description:
+          'Bearer token authentication. UserId extracted from token, or optionally override in request body.',
+      },
     },
     schemas: {
       WorkflowExecutionResponse: {
@@ -257,27 +269,30 @@ const openApiSpec: OpenAPISpec = {
           data: {
             type: 'object',
             properties: {
-              status: { 
+              status: {
                 type: 'string',
                 enum: ['completed', 'failed'],
-                description: 'Workflow execution status'
+                description: 'Workflow execution status',
               },
-              result: { 
+              result: {
                 type: 'object',
                 description: 'Workflow execution result',
                 properties: {
                   currentOutput: { type: 'string' },
-                  nodeResults: { 
+                  nodeResults: {
                     type: 'object',
-                    additionalProperties: true
+                    additionalProperties: true,
                   },
                   executionLog: {
                     type: 'array',
-                    items: { type: 'string' }
-                  }
-                }
+                    items: { type: 'string' },
+                  },
+                },
               },
-              duration: { type: 'number', description: 'Execution time in milliseconds' },
+              duration: {
+                type: 'number',
+                description: 'Execution time in milliseconds',
+              },
               message: { type: 'string' },
             },
           },
@@ -304,29 +319,33 @@ const generateOpenApiSpec = (): void => {
   try {
     const outputPath = path.join(process.cwd(), 'openapi.json');
     const specContent = JSON.stringify(openApiSpec, null, 2);
-    
+
     fs.writeFileSync(outputPath, specContent, 'utf-8');
 
     console.log('✅ OpenAPI specification generated successfully!');
     console.log(`📄 Generated: ${outputPath}`);
-    console.log(`🔗 View docs at: http://localhost:${process.env.PORT || 3000}/docs`);
+    console.log(
+      `🔗 View docs at: http://localhost:${process.env.PORT || 3000}/docs`
+    );
     console.log(`📊 Total endpoints: ${Object.keys(openApiSpec.paths).length}`);
     console.log('');
-    
+
     // Endpoint analysis
     const publicEndpoints = [
-      '/', '/api/sdk/download', '/api/sdk/info', '/llms.txt'
+      '/',
+      '/api/sdk/download',
+      '/api/sdk/info',
+      '/llms.txt',
     ];
-    
+
     const workflowEndpoints = ['/execute'];
-    
+
     const totalEndpoints = Object.keys(openApiSpec.paths).length;
 
     console.log(`📊 Endpoint Analysis:`);
     console.log(`   🌍 Public endpoints: ${publicEndpoints.length}`);
     console.log(`   🤖 Workflow endpoints: ${workflowEndpoints.length}`);
     console.log(`   📈 Total endpoints: ${totalEndpoints}`);
-    
   } catch (error) {
     console.error('❌ Failed to generate OpenAPI specification:', error);
     process.exit(1);

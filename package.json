@@ -6,8 +6,10 @@
     "dev": "npm run generate:openapi && npm run generate:sdk && npm run export:llms && npx tsx src/index.ts",
     "build": "npm run generate:openapi && npm run generate:sdk && npm run export:llms && npx tsc",
     "start": "node dist/index.js",
-    "lint": "biome check",
-    "format": "biome format --write",
+    "lint": "eslint . --ext .ts,.js,.tsx,.jsx",
+    "lint:fix": "eslint . --ext .ts,.js,.tsx,.jsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "generate:openapi": "npx tsx scripts/generate-openapi.ts",
     "generate:sdk": "swagger-typescript-api generate -p ./openapi.json -o ./generated/sdk --name ApiClient",
     "export:llms": "npx tsx scripts/export-llms.ts"
@@ -29,9 +31,14 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.0",
     "@types/node": "^20",
     "@types/swagger-ui-express": "^4.1.6",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.0",
     "swagger-typescript-api": "^13.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5"

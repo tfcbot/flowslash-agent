@@ -76,12 +76,12 @@ async function validateToken(token) {
         if (!token || token.length < 10) {
             return {
                 isValid: false,
-                error: 'Token too short - minimum 10 characters required'
+                error: 'Token too short - minimum 10 characters required',
             };
         }
         // Extract userId from token - adapt this to your external token format
         let userId;
-        // Method 1: Token format "user_{userId}_{timestamp}_{signature}" 
+        // Method 1: Token format "user_{userId}_{timestamp}_{signature}"
         if (token.startsWith('user_')) {
             const parts = token.split('_');
             if (parts.length >= 2 && parts[1]) {
@@ -90,7 +90,7 @@ async function validateToken(token) {
             else {
                 return {
                     isValid: false,
-                    error: 'Invalid token format - cannot extract userId'
+                    error: 'Invalid token format - cannot extract userId',
                 };
             }
         }
@@ -106,7 +106,7 @@ async function validateToken(token) {
             catch {
                 return {
                     isValid: false,
-                    error: 'Invalid JWT token format'
+                    error: 'Invalid JWT token format',
                 };
             }
         }
@@ -118,13 +118,13 @@ async function validateToken(token) {
         else {
             return {
                 isValid: false,
-                error: 'Unsupported token format'
+                error: 'Unsupported token format',
             };
         }
         if (!userId || userId.length < 3) {
             return {
                 isValid: false,
-                error: 'Could not extract valid userId from token'
+                error: 'Could not extract valid userId from token',
             };
         }
         // Create user context from extracted userId
@@ -143,7 +143,7 @@ async function validateToken(token) {
     catch (error) {
         return {
             isValid: false,
-            error: `Token validation error: ${error instanceof Error ? error.message : 'Unknown error'}`
+            error: `Token validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         };
     }
 }

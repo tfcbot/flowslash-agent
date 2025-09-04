@@ -28,14 +28,14 @@ export enum ConnectionStatus {
   ACTIVE = 'active',
   EXPIRED = 'expired',
   FAILED = 'failed',
-  INACTIVE = 'inactive'
+  INACTIVE = 'inactive',
 }
 
 export enum ExecutionStatus {
   PENDING = 'pending',
   RUNNING = 'running',
   COMPLETED = 'completed',
-  FAILED = 'failed'
+  FAILED = 'failed',
 }
 
 // =============================================================================
@@ -62,9 +62,21 @@ export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
 // WORKFLOW TYPES (No Database - Stateless)
 // =============================================================================
 
+export interface WorkflowNode {
+  id: string;
+  type: 'customInput' | 'llm' | 'composio' | 'agent' | 'customOutput';
+  data: Record<string, unknown>;
+}
+
+export interface WorkflowEdge {
+  id: string;
+  source: string;
+  target: string;
+}
+
 export interface WorkflowDefinition {
-  nodes: any[];
-  edges: any[];
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
   config?: Record<string, unknown>;
 }
 
@@ -127,26 +139,32 @@ export type ExecuteRequest = z.infer<typeof ExecuteRequestSchema>;
 // HELPER FUNCTIONS
 // =============================================================================
 
-export const createSuccessResponse = <T>(data: T, message?: string): ApiSuccessResponse<T> => {
-  const response: ApiSuccessResponse<T> = {
+export const createSuccessResponse = <T>(
+  data: T,
+  message?: string
+): ApiSuccessResponse<T> & { message?: string } => {
+  const response: ApiSuccessResponse<T> & { message?: string } = {
     success: true,
     data,
     timestamp: new Date().toISOString(),
   };
   if (message) {
-    (response as any).message = message;
+    response.message = message;
   }
   return response;
 };
 
-export const createErrorResponse = (error: string, message?: string): ApiErrorResponse => {
-  const response: ApiErrorResponse = {
+export const createErrorResponse = (
+  error: string,
+  message?: string
+): ApiErrorResponse & { message?: string } => {
+  const response: ApiErrorResponse & { message?: string } = {
     success: false,
     error,
     timestamp: new Date().toISOString(),
   };
   if (message) {
-    (response as any).message = message;
+    response.message = message;
   }
   return response;
 };
@@ -163,8 +181,10 @@ export const extractToolkitFromTool = (tool: ComposioTool): Provider => {
 // TYPE GUARDS
 // =============================================================================
 
-export const isApiSuccessResponse = <T>(response: ApiResponse<T>): response is ApiSuccessResponse<T> => 
-  response.success === true;
+export const isApiSuccessResponse = <T>(
+  response: ApiResponse<T>
+): response is ApiSuccessResponse<T> => response.success === true;
 
-export const isApiErrorResponse = <T>(response: ApiResponse<T>): response is ApiErrorResponse => 
-  response.success === false;
+export const isApiErrorResponse = <T>(
+  response: ApiResponse<T>
+): response is ApiErrorResponse => response.success === false;
