@@ -88,12 +88,6 @@ Interactive API documentation (Swagger UI) - accessible to everyone
 ### GET /health
 API health check and status - accessible to everyone
 
-### GET /api/sdk/download
-Download TypeScript SDK - accessible to everyone
-
-### GET /api/sdk/info  
-SDK metadata and examples - accessible to everyone
-
 ### GET /llms.txt
 This file - accessible to everyone, AI-friendly format
 
@@ -107,8 +101,6 @@ Add header: Authorization: Bearer user_abc123_1234567890_demo
     // Categorize endpoints (removed token generation and connections - both external)
     const publicEndpoints = [
       '/health',
-      '/api/sdk/download',
-      '/api/sdk/info',
       '/llms.txt',
     ];
     let publicCount = 0;
@@ -216,26 +208,28 @@ curl -X POST ${baseUrl}/execute \\
 # Response includes complete workflow execution results
 \`\`\`
 
-### TypeScript SDK Usage
+### TypeScript/JavaScript Usage
 \`\`\`typescript
-import { ApiClient } from 'flowslash-agent-sdk';
-
-// Initialize authenticated client with bearer token
-const client = new ApiClient({
-  BASE: '${baseUrl}',
-  HEADERS: {
-    Authorization: 'Bearer user_123_1234567890_demo'
-  }
-});
+// Direct API calls without SDK
+const baseUrl = '${baseUrl}';
+const bearerToken = 'user_123_1234567890_demo';
 
 async function executeWorkflow() {
   // Execute AI-generated LangGraph workflow
-  const result = await client.execute({
-    input: {
-      message: 'Send email to team@company.com about deployment success'
-    }
+  const response = await fetch(\`\${baseUrl}/execute\`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': \`Bearer \${bearerToken}\`
+    },
+    body: JSON.stringify({
+      input: {
+        message: 'Send email to team@company.com about deployment success'
+      }
+    })
   });
   
+  const result = await response.json();
   console.log('Workflow executed:', result.data);
   console.log('Duration:', result.data.duration + 'ms');
   console.log('Node Results:', result.data.result.nodeResults);

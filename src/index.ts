@@ -25,7 +25,6 @@ import { createSuccessResponse } from '@/types/simple';
 
 // Import route handlers
 import { executeRoutes } from './routes/execute';
-import { sdkRoutes } from './routes/sdk';
 
 // Import OpenAPI specification
 import { openApiSpec } from '../openapi-spec';
@@ -100,7 +99,6 @@ app.get('/health', c => {
       documentation: '/',
       execute: '/execute',
       health: '/health',
-      sdk: '/api/sdk',
       llms: '/llms.txt',
     },
   };
@@ -130,7 +128,6 @@ app.get('/llms.txt', async c => {
 
 // Main execution endpoint - stateless microservice
 app.route('/', executeRoutes()); // Main execution endpoint: /execute
-app.route('/api/sdk', sdkRoutes());
 
 // Global error handler
 app.onError((err, c) => {
@@ -151,7 +148,7 @@ app.notFound(c => {
     {
       error: 'Not Found',
       message: 'The requested endpoint does not exist',
-      availableEndpoints: ['/', '/execute', '/health', '/api/sdk', '/llms.txt'],
+      availableEndpoints: ['/', '/execute', '/health', '/llms.txt'],
       timestamp: new Date().toISOString(),
     },
     404
@@ -165,7 +162,6 @@ console.log('🚀 Starting FlowSlash Agent Microservice...');
 console.log(`📖 API Documentation: http://localhost:${port}/`);
 console.log(`⚡ Execute Endpoint: http://localhost:${port}/execute`);
 console.log(`💚 Health Check: http://localhost:${port}/health`);
-console.log(`📋 SDK Download: http://localhost:${port}/api/sdk/download`);
 console.log(`📄 LLMs.txt: http://localhost:${port}/llms.txt`);
 console.log(`🌐 CORS: Configured for localhost, *.freestyle.sh, and *.flowslash.com domains`);
 

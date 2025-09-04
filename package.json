@@ -3,15 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npm run generate:openapi && npm run generate:sdk && npm run export:llms && npx tsx src/index.ts",
-    "build": "npm run generate:openapi && npm run generate:sdk && npm run export:llms && npx tsc",
+    "dev": "npm run generate:openapi && npm run export:llms && npx tsx src/index.ts",
+    "build": "npm run generate:openapi && npm run export:llms && npx tsc",
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts,.js,.tsx,.jsx",
     "lint:fix": "eslint . --ext .ts,.js,.tsx,.jsx --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "generate:openapi": "npx tsx scripts/generate-openapi.ts",
-    "generate:sdk": "swagger-typescript-api generate -p ./openapi.json -o ./generated/sdk --name ApiClient",
     "export:llms": "npx tsx scripts/export-llms.ts"
   },
   "dependencies": {
@@ -39,7 +38,6 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "prettier": "^3.0.0",
-    "swagger-typescript-api": "^13.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5"
   }
