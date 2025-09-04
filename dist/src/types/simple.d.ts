@@ -42,9 +42,19 @@ export interface ApiErrorResponse {
     timestamp: string;
 }
 export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
+export interface WorkflowNode {
+    id: string;
+    type: 'customInput' | 'llm' | 'composio' | 'agent' | 'customOutput';
+    data: Record<string, unknown>;
+}
+export interface WorkflowEdge {
+    id: string;
+    source: string;
+    target: string;
+}
 export interface WorkflowDefinition {
-    nodes: any[];
-    edges: any[];
+    nodes: WorkflowNode[];
+    edges: WorkflowEdge[];
     config?: Record<string, unknown>;
 }
 export interface ExecutionResult {
@@ -90,8 +100,12 @@ export interface ComposioTool {
     requiresAuth?: boolean;
 }
 export type ExecuteRequest = z.infer<typeof ExecuteRequestSchema>;
-export declare const createSuccessResponse: <T>(data: T, message?: string) => ApiSuccessResponse<T>;
-export declare const createErrorResponse: (error: string, message?: string) => ApiErrorResponse;
+export declare const createSuccessResponse: <T>(data: T, message?: string) => ApiSuccessResponse<T> & {
+    message?: string;
+};
+export declare const createErrorResponse: (error: string, message?: string) => ApiErrorResponse & {
+    message?: string;
+};
 export declare const extractToolkitFromTool: (tool: ComposioTool) => Provider;
 export declare const isApiSuccessResponse: <T>(response: ApiResponse<T>) => response is ApiSuccessResponse<T>;
 export declare const isApiErrorResponse: <T>(response: ApiResponse<T>) => response is ApiErrorResponse;

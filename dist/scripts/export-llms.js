@@ -93,7 +93,12 @@ Add header: Authorization: Bearer user_abc123_1234567890_demo
 
 `;
         // Categorize endpoints (removed token generation and connections - both external)
-        const publicEndpoints = ['/', '/api/sdk/download', '/api/sdk/info', '/llms.txt'];
+        const publicEndpoints = [
+            '/',
+            '/api/sdk/download',
+            '/api/sdk/info',
+            '/llms.txt',
+        ];
         let publicCount = 0;
         let userSpecificCount = 0;
         // Process each endpoint
@@ -141,10 +146,13 @@ Add header: Authorization: Bearer user_abc123_1234567890_demo
                     llmsContent += `Request Body: JSON\n`;
                     if (schema.properties) {
                         Object.entries(schema.properties).forEach(([prop, propSchema]) => {
-                            const required = schema.required?.includes(prop) ? ' (required)' : ' (optional)';
+                            const required = schema.required?.includes(prop)
+                                ? ' (required)'
+                                : ' (optional)';
                             const isUserIdProp = prop === 'userId';
                             const prefix = isUserIdProp ? '🔑 ' : '  - ';
-                            llmsContent += `${prefix}${prop}${required}: ${propSchema.type || 'any'}\n`;
+                            const schemaType = propSchema.type || 'unknown';
+                            llmsContent += `${prefix}${prop}${required}: ${schemaType}\n`;
                         });
                     }
                     // Add example

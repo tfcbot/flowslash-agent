@@ -29,7 +29,7 @@ interface TokenValidation {
 export const bearerAuth = () => {
   return async (c: Context, next: Next) => {
     const authHeader = c.req.header('Authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return c.json(
         createErrorResponse(
@@ -55,7 +55,7 @@ export const bearerAuth = () => {
 
     // Add user context to request
     c.set('userContext', validation.userContext);
-    
+
     await next();
   };
 };
@@ -67,7 +67,7 @@ export const bearerAuth = () => {
 export const optionalBearerAuth = () => {
   return async (c: Context, next: Next) => {
     const authHeader = c.req.header('Authorization');
-    
+
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       const validation = await validateToken(token);
@@ -76,7 +76,7 @@ export const optionalBearerAuth = () => {
         c.set('userContext', validation.userContext);
       }
     }
-    
+
     await next();
   };
 };
@@ -87,11 +87,11 @@ export const optionalBearerAuth = () => {
  */
 export const getUserContext = (c: Context): UserContext => {
   const userContext = c.get('userContext') as UserContext;
-  
+
   if (!userContext || !userContext.isValid) {
     throw new Error('User context not available - authentication required');
   }
-  
+
   return userContext;
 };
 
@@ -105,7 +105,7 @@ export const getOptionalUserContext = (c: Context): UserContext | undefined => {
 
 /**
  * Validate bearer token and extract user information
- * 
+ *
  * This validates externally managed tokens and extracts userId for API operations.
  * Token format and validation logic should match your external token system.
  */
@@ -114,14 +114,14 @@ async function validateToken(token: string): Promise<TokenValidation> {
     if (!token || token.length < 10) {
       return {
         isValid: false,
-        error: 'Token too short - minimum 10 characters required'
+        error: 'Token too short - minimum 10 characters required',
       };
     }
 
     // Extract userId from token - adapt this to your external token format
     let userId: string;
-    
-    // Method 1: Token format "user_{userId}_{timestamp}_{signature}" 
+
+    // Method 1: Token format "user_{userId}_{timestamp}_{signature}"
     if (token.startsWith('user_')) {
       const parts = token.split('_');
       if (parts.length >= 2 && parts[1]) {
@@ -129,7 +129,7 @@ async function validateToken(token: string): Promise<TokenValidation> {
       } else {
         return {
           isValid: false,
-          error: 'Invalid token format - cannot extract userId'
+          error: 'Invalid token format - cannot extract userId',
         };
       }
     }
@@ -139,13 +139,13 @@ async function validateToken(token: string): Promise<TokenValidation> {
         // For JWT tokens, you would decode and extract userId
         // const payload = jwt.decode(token);
         // userId = payload.sub || payload.userId;
-        
+
         // Simplified: Use first 8 chars as userId for demo
         userId = `jwt_${token.substring(0, 8)}`;
       } catch {
         return {
           isValid: false,
-          error: 'Invalid JWT token format'
+          error: 'Invalid JWT token format',
         };
       }
     }
@@ -157,14 +157,14 @@ async function validateToken(token: string): Promise<TokenValidation> {
     else {
       return {
         isValid: false,
-        error: 'Unsupported token format'
+        error: 'Unsupported token format',
       };
     }
 
     if (!userId || userId.length < 3) {
       return {
         isValid: false,
-        error: 'Could not extract valid userId from token'
+        error: 'Could not extract valid userId from token',
       };
     }
 
@@ -181,11 +181,10 @@ async function validateToken(token: string): Promise<TokenValidation> {
       isValid: true,
       userContext,
     };
-
   } catch (error) {
     return {
       isValid: false,
-      error: `Token validation error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: `Token validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }
@@ -199,12 +198,12 @@ export const authCors = () => {
   return async (c: Context, next: Next) => {
     c.header('Access-Control-Allow-Headers', 'Authorization, Content-Type');
     c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    
+
     // Handle preflight requests
     if (c.req.method === 'OPTIONS') {
       return new Response('', { status: 204 });
     }
-    
+
     await next();
   };
 };

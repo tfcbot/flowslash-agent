@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 // Load environment variables with priority order:
 // 1. .env.local (highest priority - local development)
-// 2. .env.development (if NODE_ENV=development)  
+// 2. .env.development (if NODE_ENV=development)
 // 3. .env (general environment file)
 // 4. process.env (system environment variables)
 const dotenv = __importStar(require("dotenv"));
@@ -45,7 +45,6 @@ dotenv.config({ path: path.join(process.cwd(), '.env.local') });
 dotenv.config({ path: path.join(process.cwd(), '.env.development') });
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 const hono_1 = require("hono");
-const core_1 = require("@composio/core");
 const swagger_ui_1 = require("@hono/swagger-ui");
 const cors_1 = require("hono/cors");
 const logger_1 = require("hono/logger");
@@ -55,15 +54,15 @@ const fs = __importStar(require("fs"));
 const simple_1 = require("@/types/simple");
 // Import middleware
 const auth_1 = require("@/middleware/auth");
-// Import route handlers  
+// Import route handlers
 const execute_1 = require("./routes/execute");
 const sdk_1 = require("./routes/sdk");
 // Import OpenAPI specification
 const openapi_spec_1 = require("../openapi-spec");
-// Initialize Composio
-const composio = new core_1.Composio({
-    apiKey: process.env.COMPOSIO_API_KEY,
-});
+// Composio API key validation - initialized per-workflow execution
+if (!process.env.COMPOSIO_API_KEY) {
+    console.warn('⚠️ COMPOSIO_API_KEY not set - Composio tools will not work');
+}
 // Create Hono app
 const app = new hono_1.Hono();
 // Middleware
@@ -71,7 +70,7 @@ app.use('*', (0, cors_1.cors)());
 app.use('*', (0, logger_1.logger)());
 app.use('*', (0, auth_1.authCors)());
 // Health check endpoint
-app.get('/', (c) => {
+app.get('/', c => {
     const healthData = {
         name: 'FlowSlash Agent Microservice',
         version: '1.0.0',
@@ -80,16 +79,16 @@ app.get('/', (c) => {
             execute: '/execute',
             documentation: '/docs',
             sdk: '/api/sdk',
-            llms: '/llms.txt'
+            llms: '/llms.txt',
         },
     };
     return c.json((0, simple_1.createSuccessResponse)(healthData));
 });
 // API Documentation
 app.get('/docs/*', (0, swagger_ui_1.swaggerUI)({
-    url: '/api/openapi.json'
+    url: '/api/openapi.json',
 }));
-app.get('/api/openapi.json', (c) => {
+app.get('/api/openapi.json', c => {
     return c.json(openapi_spec_1.openApiSpec);
 });
 // Serve llms.txt file
@@ -99,15 +98,15 @@ app.get('/llms.txt', async (c) => {
         const content = fs.readFileSync(llmsPath, 'utf-8');
         return c.text(content, 200, {
             'Content-Type': 'text/plain',
-            'Content-Disposition': 'inline; filename="llms.txt"'
+            'Content-Disposition': 'inline; filename="llms.txt"',
         });
     }
-    catch (error) {
+    catch {
         return c.text('LLMs.txt file not found. Run "npm run export:llms" to generate it.', 404);
     }
 });
 // Main execution endpoint - stateless microservice
-app.route('/', (0, execute_1.executeRoutes)(composio)); // Main execution endpoint: /execute
+app.route('/', (0, execute_1.executeRoutes)()); // Main execution endpoint: /execute
 app.route('/api/sdk', (0, sdk_1.sdkRoutes)());
 // Global error handler
 app.onError((err, c) => {
@@ -119,7 +118,7 @@ app.onError((err, c) => {
     }, 500);
 });
 // 404 handler
-app.notFound((c) => {
+app.notFound(c => {
     return c.json({
         error: 'Not Found',
         message: 'The requested endpoint does not exist',

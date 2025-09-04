@@ -2,21 +2,27 @@
  * LangGraph Workflow Executor
  * Restored from original implementation for workflow execution
  */
+import type { WorkflowNode, WorkflowEdge } from '@/types/simple';
+import type { BaseMessage } from '@langchain/core/messages';
 interface WorkflowStateType {
-    messages: any[];
+    messages: BaseMessage[];
     currentInput?: string;
     currentOutput?: string;
-    nodeResults: Record<string, any>;
+    nodeResults: Record<string, Record<string, unknown>>;
     executionLog: string[];
     error?: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
+}
+interface WorkflowConfig {
+    userId?: string;
+    [key: string]: unknown;
 }
 export declare class WorkflowExecutor {
     private graph;
     private nodes;
     private edges;
     private config;
-    constructor(nodes: any[], edges: any[], config?: any);
+    constructor(nodes: WorkflowNode[], edges: WorkflowEdge[], config?: WorkflowConfig);
     private buildGraph;
     private createInputNode;
     private createLLMNode;

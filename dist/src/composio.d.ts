@@ -1,4 +1,4 @@
-import { Composio } from "@composio/core";
+import { Composio } from '@composio/core';
 /**
  * Composio client instance for server-side operations
  * This should only be used in server-side code (API routes, server components)

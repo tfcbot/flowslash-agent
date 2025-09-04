@@ -2,7 +2,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-let cachedSpec: any = null;
+interface OpenAPISpecification {
+  openapi: string;
+  info: Record<string, unknown>;
+  paths: Record<string, unknown>;
+  components?: Record<string, unknown>;
+}
+
+let cachedSpec: OpenAPISpecification | null = null;
 
 export const openApiSpec = (() => {
   if (cachedSpec) {
@@ -15,7 +22,7 @@ export const openApiSpec = (() => {
     cachedSpec = JSON.parse(specContent);
     return cachedSpec;
   } catch (error) {
-    console.warn('OpenAPI spec not found, returning minimal spec. Run "bun run generate:openapi" to generate it.');
+    console.warn('OpenAPI spec not found, returning minimal spec. Run "npm run generate:openapi" to generate it.', error);
     
     // Return minimal spec if file doesn't exist
     return {

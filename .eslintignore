@@ -1,0 +1,8 @@
+node_modules/
+dist/
+generated/
+build/
+coverage/
+.next/
+*.config.js
+package-lock.json
