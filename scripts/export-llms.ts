@@ -74,14 +74,18 @@ FlowSlash Agent is a stateless LangGraph microservice for AI-generated workflow 
 - **Stateless Design**: No persistent storage - perfect for microservices
 
 ## Getting Started Flow
-1. **Discover**: GET / (health check - no auth needed)
-2. **Get Token**: Obtain bearer token from your auth system
-3. **Execute**: POST /execute (run AI-generated LangGraph workflow)
-4. **Monitor**: Check response for execution results
+1. **Documentation**: GET / (interactive API docs - no auth needed)
+2. **Health Check**: GET /health (server status - no auth needed)
+3. **Get Token**: Obtain bearer token from your auth system
+4. **Execute**: POST /execute (run AI-generated LangGraph workflow)
+5. **Monitor**: Check response for execution results
 
 ## Public Endpoints (No Authentication Required)
 
-### GET /
+### GET / (Documentation)
+Interactive API documentation (Swagger UI) - accessible to everyone
+
+### GET /health
 API health check and status - accessible to everyone
 
 ### GET /api/sdk/download
@@ -102,7 +106,7 @@ Add header: Authorization: Bearer user_abc123_1234567890_demo
 
     // Categorize endpoints (removed token generation and connections - both external)
     const publicEndpoints = [
-      '/',
+      '/health',
       '/api/sdk/download',
       '/api/sdk/info',
       '/llms.txt',
