@@ -55,7 +55,6 @@ const simple_1 = require("@/types/simple");
 // Import middleware (authCors removed - using Hono CORS instead)
 // Import route handlers
 const execute_1 = require("./routes/execute");
-const sdk_1 = require("./routes/sdk");
 // Import OpenAPI specification
 const openapi_spec_1 = require("../openapi-spec");
 // Composio API key validation - initialized per-workflow execution
@@ -68,23 +67,28 @@ const app = new hono_1.Hono();
 app.use('*', (0, cors_1.cors)({
     origin: (origin) => {
         console.log(`🌐 CORS request from origin: ${origin || 'no-origin'}`);
-        // Allow localhost for development
-        if (!origin || origin.includes('localhost')) {
+        // Allow no origin (same-origin requests)
+        if (!origin) {
+            console.log('✅ CORS: Allowing same-origin request');
+            return '*';
+        }
+        // Allow all localhost variations (localhost, 127.0.0.1, any port)
+        if (origin.includes('localhost') || origin.includes('127.0.0.1') || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
             console.log('✅ CORS: Allowing localhost');
-            return origin || '*';
+            return origin;
         }
         // Allow all freestyle.sh subdomains (HTTP and HTTPS)
-        if (origin && origin.endsWith('.freestyle.sh')) {
+        if (origin.endsWith('.freestyle.sh')) {
             console.log('✅ CORS: Allowing freestyle.sh domain');
             return origin;
         }
         // Allow all flowslash.com subdomains (HTTP and HTTPS)
-        if (origin && origin.endsWith('.flowslash.com')) {
+        if (origin.endsWith('.flowslash.com')) {
             console.log('✅ CORS: Allowing flowslash.com domain');
             return origin;
         }
         // Allow any freestyle.sh or flowslash.com domain patterns
-        if (origin && (/^https?:\/\/.*\.freestyle\.sh$/.test(origin) || /^https?:\/\/.*\.flowslash\.com$/.test(origin))) {
+        if (/^https?:\/\/.*\.freestyle\.sh$/.test(origin) || /^https?:\/\/.*\.flowslash\.com$/.test(origin)) {
             console.log('✅ CORS: Allowing domain pattern match');
             return origin;
         }
@@ -112,7 +116,6 @@ app.get('/health', c => {
             documentation: '/',
             execute: '/execute',
             health: '/health',
-            sdk: '/api/sdk',
             llms: '/llms.txt',
         },
     };
@@ -137,7 +140,6 @@ app.get('/llms.txt', async (c) => {
 });
 // Main execution endpoint - stateless microservice
 app.route('/', (0, execute_1.executeRoutes)()); // Main execution endpoint: /execute
-app.route('/api/sdk', (0, sdk_1.sdkRoutes)());
 // Global error handler
 app.onError((err, c) => {
     console.error('Server Error:', err);
@@ -152,7 +154,7 @@ app.notFound(c => {
     return c.json({
         error: 'Not Found',
         message: 'The requested endpoint does not exist',
-        availableEndpoints: ['/', '/execute', '/health', '/api/sdk', '/llms.txt'],
+        availableEndpoints: ['/', '/execute', '/health', '/llms.txt'],
         timestamp: new Date().toISOString(),
     }, 404);
 });
@@ -162,7 +164,6 @@ console.log('🚀 Starting FlowSlash Agent Microservice...');
 console.log(`📖 API Documentation: http://localhost:${port}/`);
 console.log(`⚡ Execute Endpoint: http://localhost:${port}/execute`);
 console.log(`💚 Health Check: http://localhost:${port}/health`);
-console.log(`📋 SDK Download: http://localhost:${port}/api/sdk/download`);
 console.log(`📄 LLMs.txt: http://localhost:${port}/llms.txt`);
 console.log(`🌐 CORS: Configured for localhost, *.freestyle.sh, and *.flowslash.com domains`);
 (0, node_server_1.serve)({

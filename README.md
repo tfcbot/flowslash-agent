@@ -10,7 +10,7 @@ A stateless LangGraph-powered microservice for AI agents to build and deploy cus
 - **Stateless Architecture**: No database required - perfect for microservices and serverless
 - **Environment-Based Config**: All API keys managed via environment variables
 - **TypeScript Native**: Maximum type safety with zero `any` types and strict mode
-- **Auto-Generated SDK**: Fully typed client with complete IntelliSense support
+- **Direct API Access**: Simple REST endpoints with comprehensive documentation
 - **OpenAPI Documentation**: Interactive Swagger UI for API exploration
 - **LLMs.txt Export**: AI-friendly endpoint documentation
 - **Single Endpoint**: Simple `/execute` API for all workflow execution
@@ -22,7 +22,6 @@ A stateless LangGraph-powered microservice for AI agents to build and deploy cus
 - **Tools**: Composio (15 curated integrations with full documentation)
 - **TypeScript**: Strict mode, zero `any` types, comprehensive type safety
 - **Documentation**: OpenAPI 3.0 + Swagger UI
-- **SDK Generation**: swagger-typescript-api with full typing
 - **Runtime Validation**: Zod schemas integrated with TypeScript types
 - **Deployment**: Stateless design - works on Docker, Vercel, Cloudflare Workers
 
@@ -69,7 +68,6 @@ A stateless LangGraph-powered microservice for AI agents to build and deploy cus
 
 The server will start and automatically:
 - Generate OpenAPI specification  
-- Create TypeScript SDK
 - Export LLMs.txt file
 - Start on http://localhost:3000 with `/execute` endpoint ready
 
@@ -180,7 +178,6 @@ curl -X POST http://localhost:3000/execute \
 - **`GET /`** - Interactive API documentation (Swagger UI)
 - **`POST /execute`** - Execute the embedded workflow (requires bearer token)
 - **`GET /health`** - API health check and status
-- **`GET /api/sdk/download`** - Download TypeScript SDK
 - **`GET /llms.txt`** - AI-friendly endpoint documentation
 
 ## 🤖 **AI Agent Guide: Building Custom Workflows**
@@ -469,5 +466,5 @@ origin: (origin) => {
 ## 📞 **Support**
 
 - 📖 **Tool Documentation**: `/composio_tools_reference/tools/`
-- 🌐 **API Docs**: `http://localhost:3000/docs`
+- 🌐 **API Docs**: `http://localhost:3000/`
 - 🤖 **LLM-Friendly**: `http://localhost:3000/llms.txt`
