@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Group, Settings, ExternalLink } from "lucide-react";
+import { Group, ExternalLink } from "lucide-react";
+import { NodeDropdown } from "@/components/ui/node-dropdown";
 
 export interface AgentNodeData {
   label: string;
@@ -11,6 +12,8 @@ export interface AgentNodeData {
   systemPrompt: string;
   allowedTools: string;
   onNodeDataChange: (id: string, data: Partial<AgentNodeData>) => void;
+  onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
 }
 
 interface AgentNodeProps extends NodeProps<AgentNodeData> {
@@ -32,43 +35,58 @@ const modelOptions = {
   ],
 };
 
-export default function AgentNode({
+const AgentNode = memo(function AgentNode({
   id,
   data,
+  selected,
   onOpenToolsWindow,
 }: AgentNodeProps) {
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleLabelChange = (newLabel: string) => {
+  const handleLabelChange = useCallback((newLabel: string) => {
     data.onNodeDataChange(id, { label: newLabel });
-  };
+  }, [id, data.onNodeDataChange]);
 
-  const handleModelProviderChange = (newProvider: string) => {
+  const handleModelProviderChange = useCallback((newProvider: string) => {
     data.onNodeDataChange(id, {
       modelProvider: newProvider,
       modelName:
         modelOptions[newProvider as keyof typeof modelOptions]?.[0] || "",
     });
-  };
+  }, [id, data.onNodeDataChange]);
 
-  const handleModelNameChange = (newModel: string) => {
+  const handleModelNameChange = useCallback((newModel: string) => {
     data.onNodeDataChange(id, { modelName: newModel });
-  };
+  }, [id, data.onNodeDataChange]);
 
-  const handleSystemPromptChange = (newPrompt: string) => {
+  const handleSystemPromptChange = useCallback((newPrompt: string) => {
     data.onNodeDataChange(id, { systemPrompt: newPrompt });
-  };
+  }, [id, data.onNodeDataChange]);
 
-  const handleAllowedToolsChange = (newTools: string) => {
+  const handleAllowedToolsChange = useCallback((newTools: string) => {
     data.onNodeDataChange(id, { allowedTools: newTools });
-  };
+  }, [id, data.onNodeDataChange]);
 
-  const openToolsWindow = () => {
+  const openToolsWindow = useCallback(() => {
     onOpenToolsWindow();
-  };
+  }, [onOpenToolsWindow]);
+
+  const handleDelete = useCallback(() => {
+    if (data.onDelete) {
+      data.onDelete(id);
+    }
+  }, [id, data.onDelete]);
+
+  const handleDuplicate = useCallback(() => {
+    if (data.onDuplicate) {
+      data.onDuplicate(id);
+    }
+  }, [id, data.onDuplicate]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-2 border-indigo-500 rounded-lg p-4 shadow-lg min-w-[280px]">
+    <div className={`bg-white dark:bg-gray-800 border-2 rounded-lg p-4 shadow-lg min-w-[280px] transition-all duration-200 relative ${
+      selected ? 'border-indigo-400 shadow-indigo-400/20 shadow-xl' : 'border-indigo-500'
+    }`}>
       <Handle type="target" position={Position.Left} className="w-3 h-3" />
 
       <div className="flex items-center gap-2 mb-3">
@@ -92,14 +110,11 @@ export default function AgentNode({
             </div>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsEditing(!isEditing)}
-          className="h-6 w-6 p-0"
-        >
-          <Settings size={12} />
-        </Button>
+        <NodeDropdown
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
+          onSettings={() => setIsEditing(!isEditing)}
+        />
       </div>
 
       <div className="space-y-3">
@@ -143,10 +158,12 @@ export default function AgentNode({
             System Prompt:
           </div>
           <Input
-            value={data.systemPrompt}
+            value={data.systemPrompt || ''}
             onChange={(e) => handleSystemPromptChange(e.target.value)}
             placeholder="Enter system prompt for the agent..."
             className="h-8 text-xs"
+            onFocus={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           />
         </div>
 
@@ -155,10 +172,12 @@ export default function AgentNode({
             Allowed Tools:
           </div>
           <Input
-            value={data.allowedTools}
+            value={data.allowedTools || ''}
             onChange={(e) => handleAllowedToolsChange(e.target.value)}
             placeholder="e.g., gmail, notion, slack (comma separated)"
             className="h-8 text-xs"
+            onFocus={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           />
         </div>
 
@@ -181,4 +200,6 @@ export default function AgentNode({
       <Handle type="source" position={Position.Right} className="w-3 h-3" />
     </div>
   );
-}
+});
+
+export default AgentNode;

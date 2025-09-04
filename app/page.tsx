@@ -39,8 +39,7 @@ import {
   Group,
   Share2,
   Upload,
-  Loader2,
-  Save,
+
   Play,
   Trash2,
 } from "lucide-react";
@@ -56,6 +55,7 @@ import FlowingEdge from "@/components/builder-nodes/FlowingEdge";
 import ToolsWindow from "@/components/builder-nodes/ToolsWindow";
 import AgentBuilder from "@/components/builder-nodes/AgentBuilder";
 import WorkflowTester from "@/components/workflow-tester/WorkflowTester";
+import WorkflowTesterV2 from "@/components/workflow-tester/WorkflowTesterV2";
 
 // Types for node data
 export interface InputNodeData {
@@ -223,8 +223,9 @@ export default function BuilderPage() {
   const [isAgentRunning, setIsAgentRunning] = useState(false);
 
   // State for sidebar visibility
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [isNodeLibraryOpen, setIsNodeLibraryOpen] = useState(true);
 
   // Track selected nodes
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
@@ -254,7 +255,15 @@ export default function BuilderPage() {
 
   const [testResults, setTestResults] = useState<any>(null);
 
-  const [runJoyride, setRunJoyride] = useState(false);
+
+  
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    show: boolean;
+    x: number;
+    y: number;
+    nodeId?: string;
+  }>({ show: false, x: 0, y: 0 });
 
   const onNodeDataChange = useCallback(
     (
@@ -281,25 +290,82 @@ export default function BuilderPage() {
     [setNodes],
   );
 
+  // Enhanced node deletion with proper cleanup
+  const onNodeDelete = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    setEdges((eds) => 
+      eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
+    );
+  }, [setNodes, setEdges]);
+
+  // Node duplication functionality
+  const onNodeDuplicate = useCallback((nodeId: string) => {
+    setNodes((nds) => {
+      const nodeToDuplicate = nds.find(n => n.id === nodeId);
+      if (!nodeToDuplicate) return nds;
+      
+      const newNode = {
+        ...nodeToDuplicate,
+        id: getUniqueNodeId(nodeToDuplicate.type || "node"),
+        position: {
+          x: nodeToDuplicate.position.x + 50,
+          y: nodeToDuplicate.position.y + 50,
+        },
+        data: {
+          ...nodeToDuplicate.data,
+          onNodeDataChange: onNodeDataChange,
+          onDelete: onNodeDelete,
+          onDuplicate: onNodeDuplicate,
+        },
+      };
+      
+      return [...nds, newNode];
+    });
+  }, [setNodes, onNodeDataChange, onNodeDelete]);
+
   const nodeTypes: NodeTypes = useMemo(
     () => ({
       customInput: (props) => (
         <InputNode
           {...props}
-          data={{ ...props.data, onNodeDataChange: onNodeDataChange as any }}
+          data={{ 
+            ...props.data, 
+            onNodeDataChange: onNodeDataChange as any,
+            onDelete: onNodeDelete,
+            onDuplicate: onNodeDuplicate
+          }}
         />
       ),
-      customOutput: OutputNode,
+      customOutput: (props) => (
+        <OutputNode
+          {...props}
+          data={{ 
+            ...props.data,
+            onDelete: onNodeDelete,
+            onDuplicate: onNodeDuplicate
+          }}
+        />
+      ),
       llm: (props) => (
         <LLMNode
           {...props}
-          data={{ ...props.data, onNodeDataChange: onNodeDataChange as any }}
+          data={{ 
+            ...props.data, 
+            onNodeDataChange: onNodeDataChange as any,
+            onDelete: onNodeDelete,
+            onDuplicate: onNodeDuplicate
+          }}
         />
       ),
       composio: (props) => (
         <ComposioNode
           {...props}
-          data={{ ...props.data, onNodeDataChange: onNodeDataChange as any }}
+          data={{ 
+            ...props.data, 
+            onNodeDataChange: onNodeDataChange as any,
+            onDelete: onNodeDelete,
+            onDuplicate: onNodeDuplicate
+          }}
           onOpenToolsWindow={() => {
             setToolsWindowOpen(true);
           }}
@@ -308,7 +374,12 @@ export default function BuilderPage() {
       agent: (props) => (
         <AgentNode
           {...props}
-          data={{ ...props.data, onNodeDataChange: onNodeDataChange as any }}
+          data={{ 
+            ...props.data, 
+            onNodeDataChange: onNodeDataChange as any,
+            onDelete: onNodeDelete,
+            onDuplicate: onNodeDuplicate
+          }}
           onOpenToolsWindow={() => {
             setToolsWindowOpen(true);
           }}
@@ -316,7 +387,7 @@ export default function BuilderPage() {
       ),
       patternMeta: PatternMetaNode,
     }),
-    [onNodeDataChange, setNodes],
+    [onNodeDataChange, onNodeDelete, onNodeDuplicate],
   );
 
   const edgeTypes = useMemo(
@@ -419,8 +490,13 @@ export default function BuilderPage() {
       });
 
       let nodeData: any = { ...initialNodeData };
-      if (type === "customInput" || type === "llm" || type === "composio") {
+      if (type === "customInput" || type === "llm" || type === "composio" || type === "agent") {
         nodeData.onNodeDataChange = onNodeDataChange;
+        nodeData.onDelete = onNodeDelete;
+        nodeData.onDuplicate = onNodeDuplicate;
+      } else if (type === "customOutput") {
+        nodeData.onDelete = onNodeDelete;
+        nodeData.onDuplicate = onNodeDuplicate;
       }
 
       const newNode: Node = {
@@ -431,7 +507,7 @@ export default function BuilderPage() {
       };
       setNodes((nds) => nds.concat(newNode));
     },
-    [rfInstance, setNodes, setEdges, onNodeDataChange],
+    [rfInstance, setNodes, setEdges, onNodeDataChange, onNodeDelete, onNodeDuplicate],
   );
 
   const onDragStart = (
@@ -552,33 +628,31 @@ export default function BuilderPage() {
     setNodes((nds) => [...nds, ...newNodes]);
   }, [clipboardNodes, setNodes]);
 
+  // Enhanced deletion with better UX
   const onDelete = useCallback(() => {
     if (selectedNodes.length === 0) return;
+    
+    // Push to history before deletion
+    pushToHistory();
+    
+    const selectedNodeIds = selectedNodes.map(n => n.id);
+    
     setNodes((nds) =>
-      nds.filter((node) => !selectedNodes.find((n) => n.id === node.id)),
+      nds.filter((node) => !selectedNodeIds.includes(node.id))
     );
     setEdges((eds) =>
       eds.filter(
         (edge) =>
-          !selectedNodes.find(
-            (n) => n.id === edge.source || n.id === edge.target,
-          ),
-      ),
+          !selectedNodeIds.includes(edge.source) && 
+          !selectedNodeIds.includes(edge.target)
+      )
     );
-  }, [selectedNodes, setNodes, setEdges]);
+    
+    // Clear selection after deletion
+    setSelectedNodes([]);
+  }, [selectedNodes, setNodes, setEdges, pushToHistory]);
 
-  const onSave = useCallback(() => {
-    if (rfInstance) {
-      const flow = rfInstance.toObject();
-      const flowData = {
-        name: flowName,
-        graph_json: flow,
-        timestamp: new Date().toISOString(),
-      };
-      localStorage.setItem("current_workflow", JSON.stringify(flowData));
-      console.log("Workflow saved to localStorage:", flowData);
-    }
-  }, [rfInstance, flowName]);
+
 
   const onRestore = useCallback(() => {
     const restoreFlow = async () => {
@@ -608,6 +682,11 @@ export default function BuilderPage() {
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in an input
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
       if ((event.ctrlKey || event.metaKey) && event.key === "c") {
         event.preventDefault();
         onCopy();
@@ -620,16 +699,79 @@ export default function BuilderPage() {
         event.preventDefault();
         onDelete();
       }
+      if ((event.ctrlKey || event.metaKey) && event.key === "a") {
+        event.preventDefault();
+        // Select all nodes
+        setSelectedNodes(nodes);
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key === "d") {
+        event.preventDefault();
+        // Duplicate selected nodes
+        onPaste();
+      }
+      if (event.key === "Escape") {
+        // Clear selection and close context menu
+        setSelectedNodes([]);
+        setContextMenu({ show: false, x: 0, y: 0 });
+      }
     },
-    [onCopy, onPaste, onDelete],
+    [onCopy, onPaste, onDelete, nodes],
   );
 
   useEffect(() => {
     document.addEventListener("keydown", onKeyDown);
+    
+    // Close context menu on click outside
+    const handleClickOutside = () => {
+      setContextMenu({ show: false, x: 0, y: 0 });
+    };
+    document.addEventListener("click", handleClickOutside);
+    
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, [onKeyDown]);
+
+  // Context menu handler
+  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
+    event.preventDefault();
+    setContextMenu({
+      show: true,
+      x: event.clientX,
+      y: event.clientY,
+      nodeId: node.id,
+    });
+  }, []);
+
+  // Context menu actions
+  const contextMenuActions = {
+    duplicate: () => {
+      if (contextMenu.nodeId) {
+        const nodeToClone = nodes.find(n => n.id === contextMenu.nodeId);
+        if (nodeToClone) {
+          setClipboardNodes([nodeToClone]);
+          onPaste();
+        }
+      }
+      setContextMenu({ show: false, x: 0, y: 0 });
+    },
+    delete: () => {
+      if (contextMenu.nodeId) {
+        onNodeDelete(contextMenu.nodeId);
+      }
+      setContextMenu({ show: false, x: 0, y: 0 });
+    },
+    copy: () => {
+      if (contextMenu.nodeId) {
+        const nodeToCopy = nodes.find(n => n.id === contextMenu.nodeId);
+        if (nodeToCopy) {
+          setClipboardNodes([nodeToCopy]);
+        }
+      }
+      setContextMenu({ show: false, x: 0, y: 0 });
+    },
+  };
 
   // Load saved workflow on mount
   useEffect(() => {
@@ -672,16 +814,16 @@ export default function BuilderPage() {
       >
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
+            onClick={() => setIsNodeLibraryOpen(!isNodeLibraryOpen)}
             className="p-1.5 rounded-md transition-all duration-200 hover:bg-[#fff5f5]/20 hover:scale-105"
             style={{
               background: "rgba(255, 245, 245, 0.1)",
               color: "#fff5f5",
               backdropFilter: "blur(5px)",
             }}
-            title="Toggle Sidebar"
+            title="Toggle Node Library"
           >
-            {isLeftSidebarOpen ? (
+            {isNodeLibraryOpen ? (
               <PanelLeftClose size={20} />
             ) : (
               <PanelLeftOpen size={20} />
@@ -713,30 +855,8 @@ export default function BuilderPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={onSave}
-            className="px-3 py-1.5 text-sm rounded-md transition-all duration-200 flex items-center gap-1.5 hover:bg-[#fff5f5]/20 hover:scale-105"
-            style={{
-              background: "rgba(255, 245, 245, 0.1)",
-              color: "#fff5f5",
-              backdropFilter: "blur(5px)",
-            }}
-            title="Save Workflow"
-          >
-            <Save size={16} /> Save
-          </button>
-          <button
-            onClick={() => setRunJoyride(true)}
-            className="px-3 py-1.5 text-sm rounded-md transition-all duration-200 flex items-center gap-1.5 hover:bg-[#fff5f5]/20 hover:scale-105"
-            style={{
-              background: "rgba(255, 245, 245, 0.1)",
-              color: "#fff5f5",
-              backdropFilter: "blur(5px)",
-            }}
-            title="Tutorial"
-          >
-            <Loader2 size={16} /> Tutorial
-          </button>
+
+
           <button
             onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
             className="px-3 py-1.5 text-sm rounded-md transition-all duration-200 flex items-center gap-1.5 hover:bg-[#fff5f5]/20 hover:scale-105"
@@ -753,113 +873,10 @@ export default function BuilderPage() {
       </header>
 
       <div className="flex-1 flex">
-        {/* Left Sidebar */}
-        <aside
-          className={`flex flex-col shrink-0 overflow-y-auto transition-all duration-300 ease-in-out 
-                     ${isLeftSidebarOpen ? "w-72 p-4" : "w-0 p-0 overflow-hidden"}`}
-          style={{
-            background: "rgba(0, 0, 0, 0.7)",
-            borderRight: "1px solid rgba(255, 245, 245, 0.2)",
-            backdropFilter: "blur(10px)",
-            scrollbarWidth: "thin",
-            scrollbarColor: "rgba(255, 245, 245, 0.3) transparent",
-          }}
-        >
-          {isLeftSidebarOpen && (
-            <>
-              <div
-                className="sticky top-0 z-20 pb-2 mb-3 flex flex-col gap-2 bg-[rgba(0,0,0,0.7)]"
-                style={{ borderBottom: "1px solid rgba(255, 245, 245, 0.2)" }}
-              >
-                <span className="text-xl font-bold text-[#fff5f5] tracking-tight">
-                  Node Library
-                </span>
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search nodes or patterns..."
-                  className="mt-1 bg-black/40 border border-[#fff5f5]/20 text-[#fff5f5] placeholder:text-[#fff5f5]/40"
-                />
-              </div>
-              <div
-                className="flex flex-col gap-4 flex-grow overflow-y-auto"
-                style={{
-                  paddingBottom: "1rem",
-                  scrollbarWidth: "thin",
-                  scrollbarColor: "rgba(255, 245, 245, 0.3) transparent",
-                  maxHeight: "calc(100vh - 120px)",
-                }}
-              >
-                {filteredSidebarItems.map((item) => (
-                  <div
-                    key={item.key}
-                    onDragStart={(event) => {
-                      if (item.dragType === "node") {
-                        const nodeData = item.dragData as {
-                          nodeType: string;
-                          nodeLabel: string;
-                          initialData: any;
-                        };
-                        onDragStart(
-                          event,
-                          nodeData.nodeType,
-                          nodeData.nodeLabel,
-                          nodeData.initialData,
-                        );
-                      } else if (item.dragType === "pattern") {
-                        const patternData = item.dragData as {
-                          pattern: string;
-                        };
-                        event.dataTransfer.setData(
-                          "application/pattern",
-                          patternData.pattern,
-                        );
-                        event.dataTransfer.effectAllowed = "move";
-                      }
-                    }}
-                    draggable
-                    className="group relative p-4 rounded-xl cursor-grab active:scale-[0.97] transition-all duration-200"
-                    style={{
-                      background: "rgba(255, 245, 245, 0.1)",
-                      backdropFilter: "blur(5px)",
-                      border: "1px solid rgba(255, 245, 245, 0.2)",
-                    }}
-                  >
-                    <div className="flex flex-col items-center text-center gap-2">
-                      <div
-                        className="w-12 h-12 rounded-lg flex items-center justify-center mb-1"
-                        style={{
-                          background: "rgba(255, 245, 245, 0.15)",
-                          backdropFilter: "blur(5px)",
-                        }}
-                      >
-                        {item.icon}
-                      </div>
-                      <span className="text-sm font-medium text-[#fff5f5]">
-                        {item.label}
-                      </span>
-                      <div className="text-xs text-[#fff5f5]/70 mt-1">
-                        {item.description}
-                      </div>
-                    </div>
-                    <div
-                      className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{
-                        background: "rgba(255, 245, 245, 0.05)",
-                        border: "1px solid rgba(255, 245, 245, 0.3)",
-                        backdropFilter: "blur(5px)",
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </aside>
 
         {/* Main Canvas */}
         <main
-          className="flex-grow h-full relative"
+          className="flex-1 h-full relative"
           onDrop={onDrop}
           onDragOver={onDragOver}
         >
@@ -877,16 +894,147 @@ export default function BuilderPage() {
             edgeTypes={edgeTypes}
             fitView
             selectionMode={SelectionMode.Partial}
-            deleteKeyCode="Delete"
+            deleteKeyCode={["Delete", "Backspace"]}
+            multiSelectionKeyCode={["Meta", "Ctrl"]}
+            panOnDrag={[1, 2]}
+            selectionKeyCode={["Shift"]}
+            zoomOnScroll={true}
+            zoomOnPinch={true}
+            panOnScroll={false}
+            preventScrolling={true}
+            nodesDraggable={true}
+            nodesConnectable={true}
+            elementsSelectable={true}
             style={{
               background: "transparent",
+              width: "100%",
+              height: "100%",
+            }}
+            onNodesDelete={(deletedNodes) => {
+              // Handle nodes deleted via keyboard shortcut
+              const deletedNodeIds = deletedNodes.map(n => n.id);
+              setEdges((eds) =>
+                eds.filter(
+                  (edge) =>
+                    !deletedNodeIds.includes(edge.source) && 
+                    !deletedNodeIds.includes(edge.target)
+                )
+              );
+            }}
+            onNodeContextMenu={onNodeContextMenu}
+            connectionLineStyle={{ stroke: '#fff5f5', strokeWidth: 2, strokeDasharray: '5,5' }}
+            defaultEdgeOptions={{
+              style: { stroke: '#fff5f5', strokeWidth: 2, strokeDasharray: '5,5' },
+              type: 'flowing',
+              markerEnd: { type: MarkerType.ArrowClosed, color: '#fff5f5' },
             }}
           >
             <Controls />
           </ReactFlow>
         </main>
 
-        {/* Right Sidebar */}
+        {/* Right Sidebar - Node Library */}
+        {isNodeLibraryOpen && (
+          <aside
+            className="w-72 p-4 flex flex-col shrink-0 overflow-y-auto"
+            style={{
+              background: "rgba(0, 0, 0, 0.7)",
+              borderLeft: "1px solid rgba(255, 245, 245, 0.2)",
+              backdropFilter: "blur(10px)",
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(255, 245, 245, 0.3) transparent",
+            }}
+          >
+            <div
+              className="sticky top-0 z-20 pb-2 mb-3 flex flex-col gap-2 bg-[rgba(0,0,0,0.7)]"
+              style={{ borderBottom: "1px solid rgba(255, 245, 245, 0.2)" }}
+            >
+              <span className="text-xl font-bold text-[#fff5f5] tracking-tight">
+                Node Library
+              </span>
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search nodes or patterns..."
+                className="mt-1 bg-black/40 border border-[#fff5f5]/20 text-[#fff5f5] placeholder:text-[#fff5f5]/40"
+              />
+            </div>
+            <div
+              className="flex flex-col gap-4 flex-grow overflow-y-auto"
+              style={{
+                paddingBottom: "1rem",
+                scrollbarWidth: "thin",
+                scrollbarColor: "rgba(255, 245, 245, 0.3) transparent",
+                maxHeight: "calc(100vh - 120px)",
+              }}
+            >
+              {filteredSidebarItems.map((item) => (
+                <div
+                  key={item.key}
+                  onDragStart={(event) => {
+                    if (item.dragType === "node") {
+                      const nodeData = item.dragData as {
+                        nodeType: string;
+                        nodeLabel: string;
+                        initialData: any;
+                      };
+                      onDragStart(
+                        event,
+                        nodeData.nodeType,
+                        nodeData.nodeLabel,
+                        nodeData.initialData,
+                      );
+                    } else if (item.dragType === "pattern") {
+                      const patternData = item.dragData as {
+                        pattern: string;
+                      };
+                      event.dataTransfer.setData(
+                        "application/pattern",
+                        patternData.pattern,
+                      );
+                      event.dataTransfer.effectAllowed = "move";
+                    }
+                  }}
+                  draggable
+                  className="group relative p-4 rounded-xl cursor-grab active:scale-[0.97] transition-all duration-200"
+                  style={{
+                    background: "rgba(255, 245, 245, 0.1)",
+                    backdropFilter: "blur(5px)",
+                    border: "1px solid rgba(255, 245, 245, 0.2)",
+                  }}
+                >
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div
+                      className="w-12 h-12 rounded-lg flex items-center justify-center mb-1"
+                      style={{
+                        background: "rgba(255, 245, 245, 0.15)",
+                        backdropFilter: "blur(5px)",
+                      }}
+                    >
+                      {item.icon}
+                    </div>
+                    <span className="text-sm font-medium text-[#fff5f5]">
+                      {item.label}
+                    </span>
+                    <div className="text-xs text-[#fff5f5]/70 mt-1">
+                      {item.description}
+                    </div>
+                  </div>
+                  <div
+                    className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{
+                      background: "rgba(255, 245, 245, 0.05)",
+                      border: "1px solid rgba(255, 245, 245, 0.3)",
+                      backdropFilter: "blur(5px)",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </aside>
+        )}
+
+        {/* Right Sidebar - Workflow Tester */}
         {isRightSidebarOpen && (
           <div
             className="w-96 p-4 overflow-y-auto"
@@ -896,7 +1044,7 @@ export default function BuilderPage() {
               backdropFilter: "blur(10px)",
             }}
           >
-            <WorkflowTester
+            <WorkflowTesterV2
               nodes={nodes}
               edges={edges}
               onTestResults={setTestResults}
@@ -914,26 +1062,41 @@ export default function BuilderPage() {
         />
       )}
 
-      {/* Joyride Tutorial */}
-      {/* <Joyride
-        steps={[
-          {
-            target: '.react-flow',
-            content: 'This is your workflow canvas. Drag and drop components from the left sidebar to build your AI agent.',
-            placement: 'center',
-          },
-          {
-            target: '.react-flow',
-            content: 'Connect components by dragging from one node\'s output to another node\'s input.',
-            placement: 'center',
-          },
-        ]}
-        run={runJoyride}
-        onFinish={() => setRunJoyride(false)}
-        continuous
-        showProgress
-        showSkipButton
-      /> */}
+      {/* Context Menu */}
+      {contextMenu.show && (
+        <div
+          className="fixed z-50 bg-black/90 border border-[#fff5f5]/20 rounded-lg shadow-xl backdrop-blur-sm"
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="py-2">
+            <button
+              onClick={contextMenuActions.duplicate}
+              className="w-full px-4 py-2 text-left text-sm text-[#fff5f5] hover:bg-[#fff5f5]/10 transition-colors"
+            >
+              Duplicate Node
+            </button>
+            <button
+              onClick={contextMenuActions.copy}
+              className="w-full px-4 py-2 text-left text-sm text-[#fff5f5] hover:bg-[#fff5f5]/10 transition-colors"
+            >
+              Copy Node
+            </button>
+            <div className="border-t border-[#fff5f5]/20 my-1" />
+            <button
+              onClick={contextMenuActions.delete}
+              className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+            >
+              Delete Node
+            </button>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }

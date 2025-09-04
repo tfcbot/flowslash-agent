@@ -1,40 +1,58 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Puzzle, Settings, ExternalLink } from "lucide-react";
+import { Puzzle, ExternalLink } from "lucide-react";
+import { NodeDropdown } from "@/components/ui/node-dropdown";
 
 export interface ComposioNodeData {
   label: string;
   toolAction: string;
   onNodeDataChange: (id: string, data: Partial<ComposioNodeData>) => void;
+  onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
 }
 
 interface ComposioNodeProps extends NodeProps<ComposioNodeData> {
   onOpenToolsWindow: () => void;
 }
 
-export default function ComposioNode({
+const ComposioNode = memo(function ComposioNode({
   id,
   data,
+  selected,
   onOpenToolsWindow,
 }: ComposioNodeProps) {
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleLabelChange = (newLabel: string) => {
+  const handleLabelChange = useCallback((newLabel: string) => {
     data.onNodeDataChange(id, { label: newLabel });
-  };
+  }, [id, data.onNodeDataChange]);
 
-  const handleToolActionChange = (newAction: string) => {
+  const handleToolActionChange = useCallback((newAction: string) => {
     data.onNodeDataChange(id, { toolAction: newAction });
-  };
+  }, [id, data.onNodeDataChange]);
 
-  const openToolsWindow = () => {
+  const openToolsWindow = useCallback(() => {
     onOpenToolsWindow();
-  };
+  }, [onOpenToolsWindow]);
+
+  const handleDelete = useCallback(() => {
+    if (data.onDelete) {
+      data.onDelete(id);
+    }
+  }, [id, data.onDelete]);
+
+  const handleDuplicate = useCallback(() => {
+    if (data.onDuplicate) {
+      data.onDuplicate(id);
+    }
+  }, [id, data.onDuplicate]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-2 border-orange-500 rounded-lg p-4 shadow-lg min-w-[250px]">
+    <div className={`bg-white dark:bg-gray-800 border-2 rounded-lg p-4 shadow-lg min-w-[250px] transition-all duration-200 ${
+      selected ? 'border-orange-400 shadow-orange-400/20 shadow-xl' : 'border-orange-500'
+    }`}>
       <Handle type="target" position={Position.Left} className="w-3 h-3" />
 
       <div className="flex items-center gap-2 mb-3">
@@ -58,14 +76,11 @@ export default function ComposioNode({
             </div>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsEditing(!isEditing)}
-          className="h-6 w-6 p-0"
-        >
-          <Settings size={12} />
-        </Button>
+        <NodeDropdown
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
+          onSettings={() => setIsEditing(!isEditing)}
+        />
       </div>
 
       <div className="space-y-3">
@@ -74,10 +89,12 @@ export default function ComposioNode({
             Tool Action:
           </div>
           <Input
-            value={data.toolAction}
+            value={data.toolAction || ''}
             onChange={(e) => handleToolActionChange(e.target.value)}
             placeholder="e.g., send_email, create_task..."
             className="h-8 text-xs"
+            onFocus={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           />
         </div>
 
@@ -102,4 +119,6 @@ export default function ComposioNode({
       <Handle type="source" position={Position.Right} className="w-3 h-3" />
     </div>
   );
-}
+});
+
+export default ComposioNode;
