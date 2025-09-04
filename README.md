@@ -448,6 +448,24 @@ Input → Generate Content (LLM) → Post Twitter (Composio) → Post LinkedIn (
 - ✅ **Environment Config**: All API keys from environment variables
 - ✅ **Git-Based Deployment**: Version control for AI-generated workflows
 
+## 🌐 **CORS Configuration**
+
+The server is pre-configured to accept requests from:
+
+- **Localhost**: All localhost ports for development
+- **Freestyle Domains**: All `*.freestyle.sh` subdomains (HTTP and HTTPS)
+- **Flowslash Domains**: All `*.flowslash.com` subdomains (HTTP and HTTPS)
+
+```typescript
+// Automatic CORS handling for dev servers
+origin: (origin) => {
+  if (!origin || origin.includes('localhost')) return origin || '*';
+  if (origin.endsWith('.freestyle.sh')) return origin;
+  if (origin.endsWith('.flowslash.com')) return origin;
+  return null; // Reject other origins
+}
+```
+
 ## 📞 **Support**
 
 - 📖 **Tool Documentation**: `/composio_tools_reference/tools/`
