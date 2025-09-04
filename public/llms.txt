@@ -1,0 +1,170 @@
+# FlowSlash Agent API Endpoints
+# Generated: 2025-09-04T20:44:55.048Z
+# Base URL: http://localhost:3000
+
+## Overview
+FlowSlash Agent is a stateless LangGraph microservice for AI-generated workflow execution. It executes custom AI workflows with 15 curated tool integrations via Composio. No database required - purely stateless execution.
+
+## Authentication Model
+- **Bearer Token Authentication**: API uses bearer tokens for secure access
+- **UserId Extraction**: User ID extracted from bearer token automatically
+- **Environment API Keys**: Composio, OpenAI, and other API keys from environment variables
+- **Stateless Design**: No persistent storage - perfect for microservices
+
+## Getting Started Flow
+1. **Discover**: GET / (health check - no auth needed)
+2. **Get Token**: Obtain bearer token from your auth system
+3. **Execute**: POST /execute (run AI-generated LangGraph workflow)
+4. **Monitor**: Check response for execution results
+
+## Public Endpoints (No Authentication Required)
+
+### GET /
+API health check and status - accessible to everyone
+
+### GET /api/sdk/download
+Download TypeScript SDK - accessible to everyone
+
+### GET /api/sdk/info  
+SDK metadata and examples - accessible to everyone
+
+### GET /llms.txt
+This file - accessible to everyone, AI-friendly format
+
+## Authenticated Endpoints (Require Bearer Token)
+
+These endpoints require "Authorization: Bearer {token}" header:
+Add header: Authorization: Bearer user_abc123_1234567890_demo
+
+### POST /execute
+Execute AI-Generated Workflow
+Execute the embedded LangGraph workflow with user input. UserId extracted from bearer token or optionally provided in request body.
+Request Body: JSON
+  - input (required): object
+🔑 userId (optional): string
+Responses: 200, 500
+
+## Complete Usage Flow Examples
+
+### Basic Workflow Execution (cURL)
+```bash
+# Step 1: Obtain Bearer Token from your auth system
+# TOKEN="user_123_1234567890_demo"
+
+# Step 2: Execute AI-Generated LangGraph Workflow
+curl -X POST http://localhost:3000/execute \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "input": {
+      "message": "Send email to john@example.com about project completion"
+    }
+  }'
+
+# Response includes complete workflow execution results
+```
+
+### TypeScript SDK Usage
+```typescript
+import { ApiClient } from 'flowslash-agent-sdk';
+
+// Initialize authenticated client with bearer token
+const client = new ApiClient({
+  BASE: 'http://localhost:3000',
+  HEADERS: {
+    Authorization: 'Bearer user_123_1234567890_demo'
+  }
+});
+
+async function executeWorkflow() {
+  // Execute AI-generated LangGraph workflow
+  const result = await client.execute({
+    input: {
+      message: 'Send email to team@company.com about deployment success'
+    }
+  });
+  
+  console.log('Workflow executed:', result.data);
+  console.log('Duration:', result.data.duration + 'ms');
+  console.log('Node Results:', result.data.result.nodeResults);
+}
+```
+
+## Available Tools (15 Total)
+FlowSlash Agent supports these curated integrations with full documentation:
+
+### 📧 Communication
+- **Gmail** - Email sending, drafts, labels, search
+- **Slack** - Messages, channels, notifications
+
+### 🗂️ Productivity & Data
+- **Notion** - Pages, databases, content management
+- **Airtable** - Records, bases, field management
+- **Google Sheets** - Spreadsheet operations
+- **Linear** - Issue tracking, project management
+
+### 👥 Social Media Management
+- **Twitter** - Posting, engagement, management
+- **LinkedIn** - Professional networking posts
+- **Instagram** - Content posting and management
+- **Ayrshare** - Multi-platform social posting
+
+### 🔧 Development & Files
+- **GitHub** - Repository operations, issues, pull requests
+- **Google Drive** - File storage and sharing
+- **Dropbox** - Cloud file management
+
+### 🤖 Advanced Tools
+- **Apify** - Web scraping and automation
+- **Replicate** - AI/ML model execution
+
+All tools documented in `/composio_tools_reference/tools/`
+
+## Endpoint Statistics
+- **Total Endpoints**: 5
+- **Public Endpoints**: 4 (80%)
+- **User-Specific Endpoints**: 1 (20%)
+
+## Why Bearer Token Authentication
+
+### 🔒 Security Benefits
+- **Token-Based**: Standard API authentication without user registration
+- **Data Isolation**: Users only see their own connections, executions, analytics
+- **Access Control**: Tools depend on token holder's authorized connections
+- **Rate Limiting**: Track usage and prevent abuse per token
+- **Audit Trail**: Know who executed what and when
+
+### ⚡ Performance Benefits  
+- **Stateless**: No session management required
+- **Personalized Results**: Only show tools token holder can actually use
+- **Efficient Queries**: Filter data by user scope from token
+- **Composio Compliance**: Third-party APIs require user context
+
+### 🎯 Developer Experience Benefits
+- **Simple Auth**: Just generate token and use it
+- **No Registration**: Skip user signup/login flows
+- **API-First**: Standard bearer token pattern
+- **Flexible**: Tokens can represent users, apps, or services
+
+## Rate Limits (Per User)
+- **Free Tier**: 100 executions per day
+- **Pro Tier**: 1000 executions per day  
+- **Enterprise**: Unlimited executions
+
+## Error Handling
+All endpoints return standardized TypeScript-typed error responses:
+```json
+{
+  "success": false,
+  "error": "Error category",
+  "message": "Detailed error description", 
+  "timestamp": "2025-01-XX:XX:XX.XXXZ"
+}
+```
+
+## Support & Resources
+- **Interactive Documentation**: http://localhost:3000/docs
+- **TypeScript SDK Download**: http://localhost:3000/api/sdk/download
+- **SDK Information**: http://localhost:3000/api/sdk/info
+- **Health Check**: http://localhost:3000/
+- **This File**: http://localhost:3000/llms.txt

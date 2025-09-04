@@ -1,0 +1,13 @@
+{
+  "name": "realtime-collaboration-test",
+  "version": "1.0.0",
+  "description": "Test real-time collaboration between users and agents",
+  "scripts": {
+    "test": "npx tsx test-collaboration.ts",
+    "test-agents": "npx tsx ../agent-integration/optimization-agent.ts test-collaboration-workflow"
+  },
+  "dependencies": {
+    "@instantdb/admin": "latest",
+    "tsx": "^4.7.0"
+  }
+}
