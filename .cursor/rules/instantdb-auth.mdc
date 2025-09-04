@@ -1,0 +1,90 @@
+---
+description: InstantDB authentication patterns and components
+---
+
+# InstantDB Authentication Patterns
+
+## Authentication Components
+
+Always use the authentication wrapper components:
+
+```typescript
+function App() {
+  return (
+    <div>
+      <db.SignedIn>
+        {/* Content for authenticated users */}
+        <AuthenticatedApp />
+      </db.SignedIn>
+      <db.SignedOut>
+        {/* Content for unauthenticated users */}
+        <LoginForm />
+      </db.SignedOut>
+    </div>
+  );
+}
+```
+
+## Magic Code Authentication
+
+Standard pattern for email-based auth:
+
+```typescript
+// Send magic code
+await db.auth.sendMagicCode({ email: userEmail });
+
+// Sign in with code
+await db.auth.signInWithMagicCode({ 
+  email: userEmail, 
+  code: verificationCode 
+});
+
+// Sign out
+await db.auth.signOut();
+```
+
+## User Access
+
+**CRITICAL**: `db.useUser()` can ONLY be used inside `db.SignedIn` component:
+
+```typescript
+function AuthenticatedComponent() {
+  const user = db.useUser(); // ✅ Safe inside db.SignedIn
+  
+  return <div>Welcome {user.email}</div>;
+}
+
+// ❌ This will error - useUser outside SignedIn
+function BadComponent() {
+  const user = db.useUser(); // ERROR!
+}
+```
+
+## Profile Management Pattern
+
+Common pattern for user profiles:
+
+```typescript
+async function createProfile(userId: string) {
+  await db.transact(
+    db.tx.profiles[userId]
+      .update({ 
+        handle: generateHandle(),
+        createdAt: Date.now(),
+      })
+      .link({ user: userId }),
+  );
+}
+
+function useProfile() {
+  const user = db.useUser();
+  const { data } = db.useQuery({
+    profiles: {
+      $: { where: { 'user.id': user.id } },
+      avatar: {},
+    },
+  });
+  
+  return data?.profiles?.[0];
+}
+```

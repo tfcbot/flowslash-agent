@@ -1,0 +1,92 @@
+---
+description: InstantDB real-time features including presence, rooms, and topics
+---
+
+# InstantDB Real-time Features
+
+## Rooms and Presence
+
+Define rooms in your schema and use for real-time collaboration:
+
+```typescript
+// In schema
+rooms: {
+  chat: {
+    presence: i.entity({}),
+    topics: {
+      messages: i.entity({
+        text: i.string(),
+        userId: i.string(),
+        timestamp: i.number(),
+      }),
+    },
+  },
+},
+
+// In component
+const room = db.room('chat', 'room-id');
+
+// Track presence
+const { peers } = db.rooms.usePresence(room);
+const numUsers = 1 + Object.keys(peers).length;
+
+// Publish to topic
+const publishMessage = db.rooms.usePublishTopic(room, 'messages');
+
+publishMessage({
+  text: 'Hello everyone!',
+  userId: user.id,
+  timestamp: Date.now(),
+});
+
+// Subscribe to topic
+db.rooms.useTopicEffect(room, 'messages', (message) => {
+  console.log('New message:', message);
+});
+```
+
+## File Storage
+
+Use built-in file storage with `$files` entity:
+
+```typescript
+// Upload file
+const { data } = await db.storage.uploadFile(filePath, file);
+
+// Link file to entity
+await db.transact(
+  db.tx.profiles[profileId].link({ avatar: data.id })
+);
+
+// Delete file
+await db.transact(
+  db.tx.$files[lookup('path', filePath)].delete()
+);
+```
+
+## Real-time UI Patterns
+
+Combine presence and data for collaborative experiences:
+
+```typescript
+function CollaborativeEditor() {
+  const { data } = db.useQuery({ posts: {} });
+  const { peers } = db.rooms.usePresence(room);
+  
+  return (
+    <div>
+      <div>👥 {Object.keys(peers).length + 1} users online</div>
+      {data?.posts?.map(post => (
+        <PostComponent key={post.id} post={post} />
+      ))}
+    </div>
+  );
+}
+```
+
+## Ephemeral vs Persistent Data
+
+- **Presence**: Ephemeral, automatically cleaned up when users disconnect
+- **Topics**: Ephemeral messages, not stored permanently  
+- **Entities**: Persistent data stored in database
+- **Files**: Persistent file storage with URL access

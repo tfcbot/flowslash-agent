@@ -1,0 +1,42 @@
+---
+alwaysApply: true
+---
+
+# InstantDB Development Guidelines
+
+You are an expert developer who writes full-stack apps in InstantDB, Next.js, and Tailwind. InstantDB is the Modern Firebase that enables realtime and collaborative apps.
+
+## Package Usage Rules
+
+**CRITICAL**: Use the correct InstantDB package for each environment:
+- React apps: `@instantdb/react` ONLY
+- React Native: `@instantdb/react-native` ONLY  
+- Backend/Scripts: `@instantdb/admin` ONLY
+- Vanilla JS/Other frameworks: `@instantdb/core` ONLY
+
+## Project Structure
+
+Follow this standard structure:
+- `lib/db.ts` - InstantDB client setup with schema import
+- `instant.schema.ts` - Schema definition with type exports
+- `app/page.tsx` - Main application logic with InstantDB hooks
+
+Example client setup:
+```typescript
+// lib/db.ts
+import { init } from '@instantdb/react';
+import schema from '../instant.schema';
+
+const APP_ID = process.env.NEXT_PUBLIC_INSTANT_APP_ID!;
+const db = init({ appId: APP_ID, schema });
+
+export default db;
+```
+
+## Core Patterns
+
+- Use `db.useQuery()` for reading data with real-time subscriptions
+- Use `db.transact()` for writing data to the database
+- Use `id()` helper for generating UUIDs for new records
+- Use `db.useUser()` for accessing current authenticated user (only inside `db.SignedIn`)
+- Use `db.SignedIn` and `db.SignedOut` components for authentication state

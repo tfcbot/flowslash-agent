@@ -1,0 +1,61 @@
+---
+globs: *schema*.ts,*schema*.js
+---
+
+# InstantDB Schema Definition Guide
+
+## Schema Structure
+
+Always define schemas using the `i.schema()` pattern with proper TypeScript exports:
+
+```typescript
+import { i } from '@instantdb/react';
+
+const _schema = i.schema({
+  entities: {
+    // Define your entities here
+    profiles: i.entity({
+      handle: i.string(),
+      email: i.string().optional(),
+    }),
+    posts: i.entity({
+      text: i.string(),
+      createdAt: i.number().indexed(),
+    }),
+  },
+  links: {
+    // Define relationships here
+    userProfiles: {
+      forward: { on: 'profiles', has: 'one', label: 'user' },
+      reverse: { on: '$users', has: 'one', label: 'profile' },
+    },
+  },
+  rooms: {
+    // Define real-time rooms here
+    chat: {
+      presence: i.entity({}),
+      topics: {
+        messages: i.entity({
+          text: i.string(),
+          timestamp: i.number(),
+        }),
+      },
+    },
+  },
+});
+
+// Export with proper TypeScript typing
+type _AppSchema = typeof _schema;
+interface AppSchema extends _AppSchema {}
+const schema: AppSchema = _schema;
+
+export type { AppSchema };
+export default schema;
+```
+
+## Entity Patterns
+
+- Use `.indexed()` for fields you'll query/sort by
+- Use `.optional()` for nullable fields
+- Use `.unique()` for fields that must be unique
+- Built-in entities: `$users` and `$files` are available by default

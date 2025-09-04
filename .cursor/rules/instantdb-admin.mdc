@@ -1,0 +1,83 @@
+---
+description: InstantDB Admin SDK patterns for backend and server usage
+---
+
+# InstantDB Admin SDK Patterns
+
+## Admin SDK Setup
+
+**CRITICAL**: For backend/server environments, ONLY use `@instantdb/admin`:
+
+```typescript
+import { init } from '@instantdb/admin';
+
+const db = init({
+  appId: process.env.INSTANT_APP_ID!,
+  adminToken: process.env.INSTANT_ADMIN_TOKEN!, // SENSITIVE - use env var
+});
+```
+
+## Admin Token Security
+
+**CRITICAL**: 
+- Admin token is SENSITIVE and must be stored in environment variables
+- NEVER hardcode admin tokens in your code
+- Get admin token using MCP tool via `create-app`
+
+## Seeding Data
+
+**CRITICAL**: To create seed data, you MUST write a script using the Admin SDK:
+
+```typescript
+// seed-script.ts
+import { init } from '@instantdb/admin';
+
+const adminDb = init({
+  appId: process.env.INSTANT_APP_ID!,
+  adminToken: process.env.INSTANT_ADMIN_TOKEN!,
+});
+
+async function seedData() {
+  // Create initial data
+  await adminDb.transact([
+    adminDb.tx.users[id()].update({
+      email: 'admin@example.com',
+      createdAt: Date.now(),
+    }),
+    adminDb.tx.posts[id()].update({
+      title: 'Welcome Post',
+      content: 'Welcome to our app!',
+      createdAt: Date.now(),
+    }),
+  ]);
+}
+
+seedData().catch(console.error);
+```
+
+## Admin Queries
+
+Admin SDK uses same query patterns but without hooks:
+
+```typescript
+// Query data from server
+const { data } = await adminDb.query({
+  posts: {
+    $: { limit: 100 },
+    author: {},
+  },
+});
+
+// Server transactions
+await adminDb.transact(
+  adminDb.tx.posts[postId].update({
+    status: 'published',
+    publishedAt: Date.now(),
+  })
+);
+```
+
+## DO NOT Seed from Client
+
+❌ Never try to seed data from the client-side code
+✅ Always use Admin SDK in separate scripts for seeding

@@ -1,0 +1,74 @@
+---
+description: InstantDB common mistakes and best practices
+---
+
+# InstantDB Best Practices & Common Mistakes
+
+## Critical Don'ts
+
+❌ **Don't use these non-existent operators**: `$exists`, `$nin`, `$regex`
+❌ **Don't use pagination on nested relations** - only on top-level entities
+❌ **Don't call `useUser()` outside `db.SignedIn`** component
+❌ **Don't seed data from client** - use Admin SDK scripts only
+❌ **Don't hardcode admin tokens** - use environment variables
+❌ **Don't forget to use `id()`** for generating UUIDs
+
+## Performance Best Practices
+
+✅ **Use `.indexed()`** on fields you'll query or sort by
+✅ **Limit query results** with `limit` parameter on top-level queries
+✅ **Use specific field selection** instead of fetching all data
+✅ **Batch transactions** when making multiple related changes
+
+## Type Safety
+
+Always export proper types from schema:
+
+```typescript
+// Good: Proper type exports
+type _AppSchema = typeof _schema;
+interface AppSchema extends _AppSchema {}
+const schema: AppSchema = _schema;
+
+export type { AppSchema };
+export default schema;
+
+// Use utility types for query results
+type PostWithAuthor = InstaQLEntity<
+  typeof schema,
+  'posts',
+  { author: { avatar: {} } }
+>;
+```
+
+## Error Handling
+
+Handle loading and error states properly:
+
+```typescript
+const { data, isLoading, error } = db.useQuery({ posts: {} });
+
+if (isLoading) return <LoadingSpinner />;
+if (error) return <ErrorMessage error={error.message} />;
+if (!data?.posts) return <EmptyState />;
+
+return <PostList posts={data.posts} />;
+```
+
+## Environment Setup
+
+Ensure proper environment variables:
+
+```typescript
+// Required environment variables
+NEXT_PUBLIC_INSTANT_APP_ID=your-app-id
+INSTANT_ADMIN_TOKEN=your-admin-token-for-backend
+```
+
+## Development Workflow
+
+1. Define schema first in `instant.schema.ts`
+2. Set up client in `lib/db.ts`  
+3. Use `db.useQuery()` for reads, `db.transact()` for writes
+4. Implement auth with `db.SignedIn`/`db.SignedOut`
+5. Use Admin SDK for backend operations and seeding

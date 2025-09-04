@@ -1,0 +1,91 @@
+---
+globs: *.ts,*.tsx
+---
+
+# InstantDB Query and Transaction Patterns
+
+## Query Patterns
+
+Use `db.useQuery()` for real-time data subscriptions:
+
+```typescript
+const { data, isLoading, error } = db.useQuery({
+  posts: {
+    $: { 
+      where: { authorId: userId },
+      order: { createdAt: 'desc' },
+      limit: 10 
+    },
+    author: { avatar: {} }, // Include relations
+  },
+});
+```
+
+## Where Clause Operators
+
+**CRITICAL**: These are ALL the supported where operators:
+
+```typescript
+// Equality
+{ field: value }
+
+// Inequality  
+{ field: { $ne: value } }
+
+// Null checks
+{ field: { $isNull: true | false } }
+
+// Comparisons (indexed fields only)
+{ field: { $gt: value, $lt: value, $gte: value, $lte: value } }
+
+// Sets
+{ field: { $in: [v1, v2] } }
+
+// Substring matching
+{ field: { $like: 'prefix%' } }      // case-sensitive
+{ field: { $ilike: '%contains%' } }  // case-insensitive
+
+// Logic
+{ and: [{...}, {...}] }
+{ or: [{...}, {...}] }
+
+// Nested fields
+{ 'relation.field': value }
+```
+
+**NO** `$exists`, `$nin`, or `$regex` operators exist.
+
+## Transaction Patterns
+
+Always use `db.transact()` for writes:
+
+```typescript
+// Create new record
+db.transact(
+  db.tx.posts[id()].update({
+    text: "Hello world",
+    createdAt: Date.now(),
+  })
+);
+
+// Update existing record
+db.transact(
+  db.tx.posts[postId].update({
+    text: "Updated text",
+  })
+);
+
+// Delete record
+db.transact(db.tx.posts[postId].delete());
+
+// Link entities
+db.transact(
+  db.tx.posts[postId].link({ author: authorId })
+);
+```
+
+## Critical Rules
+
+- **NEVER** use pagination on nested relations - only on top-level entities
+- Always use `id()` helper for generating UUIDs
+- Use `await` with `transact()` when you need to wait for completion
