@@ -52,8 +52,7 @@ const node_server_1 = require("@hono/node-server");
 const fs = __importStar(require("fs"));
 // Import simplified types
 const simple_1 = require("@/types/simple");
-// Import middleware
-const auth_1 = require("@/middleware/auth");
+// Import middleware (authCors removed - using Hono CORS instead)
 // Import route handlers
 const execute_1 = require("./routes/execute");
 const sdk_1 = require("./routes/sdk");
@@ -66,9 +65,35 @@ if (!process.env.COMPOSIO_API_KEY) {
 // Create Hono app
 const app = new hono_1.Hono();
 // Middleware
-app.use('*', (0, cors_1.cors)());
+app.use('*', (0, cors_1.cors)({
+    origin: (origin) => {
+        console.log(`🌐 CORS request from origin: ${origin || 'no-origin'}`);
+        // Allow localhost for development
+        if (!origin || origin.includes('localhost')) {
+            console.log('✅ CORS: Allowing localhost');
+            return origin || '*';
+        }
+        // Allow all freestyle.sh subdomains (HTTP and HTTPS)
+        if (origin && origin.endsWith('.freestyle.sh')) {
+            console.log('✅ CORS: Allowing freestyle.sh domain');
+            return origin;
+        }
+        // Allow all flowslash.com subdomains (HTTP and HTTPS)
+        if (origin && origin.endsWith('.flowslash.com')) {
+            console.log('✅ CORS: Allowing flowslash.com domain');
+            return origin;
+        }
+        // Allow any freestyle.sh or flowslash.com domain patterns
+        if (origin && (/^https?:\/\/.*\.freestyle\.sh$/.test(origin) || /^https?:\/\/.*\.flowslash\.com$/.test(origin))) {
+            console.log('✅ CORS: Allowing domain pattern match');
+            return origin;
+        }
+        console.log('❌ CORS: Rejecting origin');
+        return null;
+    },
+    credentials: true,
+}));
 app.use('*', (0, logger_1.logger)());
-app.use('*', (0, auth_1.authCors)());
 // Health check endpoint
 app.get('/', c => {
     const healthData = {
@@ -133,6 +158,7 @@ console.log(`⚡ Execute Endpoint: http://localhost:${port}/execute`);
 console.log(`📖 API Documentation: http://localhost:${port}/docs`);
 console.log(`📋 SDK Download: http://localhost:${port}/api/sdk/download`);
 console.log(`📄 LLMs.txt: http://localhost:${port}/llms.txt`);
+console.log(`🌐 CORS: Configured for localhost, *.freestyle.sh, and *.flowslash.com domains`);
 (0, node_server_1.serve)({
     fetch: app.fetch,
     port: port,
